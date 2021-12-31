@@ -81,7 +81,7 @@ Screen('BeginOpenGL', ds.w);
     plaidData = permute(plaidData,[ 3 2 1 ]);
 
 type = GL_TEXTURE_2D;
-s1 = 256; s2 = 256;
+s1 = 512; s2 = 512;
 [x,y] = meshgrid(-1*(s1/2):(s1/2)-1, -1*(s2/2): (s2/2)-1);
 aperture = zeros(s1,s2);
 gauss = (exp(-((x/90).^2)-((y/90).^2))).*255;
@@ -104,9 +104,8 @@ glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
 glTexParameterfv(type, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
 glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR);
                                     %keyboard
-glTexImage2D(type, 0, GL.RGBA, 256, 256, 0, GL.RGBA, GL.UNSIGNED_BYTE, uint8(aperture));
+glTexImage2D(type, 0, GL.RGBA, 512, 512, 0, GL.RGBA, GL.UNSIGNED_BYTE, uint8(aperture));
 glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
-glBindTexture(type,0)
  %keyboard
  Screen('EndOpenGL', ds.w);
 while ~readyToBegin % confirm everything's ready to go
@@ -470,7 +469,13 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                                  for i = 1:3
                                     %diskTexture.id = glGenTextures(1);
                                     glBindTexture(type, textureid(2));
-                                    
+                                    glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.REPEAT);
+                                    glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
+                                    glTexParameterfv(type, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
+                                    glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR);
+                                    %keyboard
+                                    glTexImage2D(type, 0, GL.RGBA, 512, 512, 0, GL.RGBA, GL.UNSIGNED_BYTE, uint8(aperture));
+                                    glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
                                     moglDrawDots3D(ds.w, [shape.disk.apertureX_m{i},shape.disk.apertureY_m{i},shape.disk.apertureZ_m{i}]', shape.disk.size_px, [1 1 1 1], [], []);
                                     glBindTexture(GL.TEXTURE_2D, 0)
                                  end

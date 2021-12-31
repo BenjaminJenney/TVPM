@@ -21,6 +21,7 @@ function disk = diskPos(ds, disk, plane)
         disk.Z_m{i} = ones(disk.numDisks,1).*Z(i);
         disk.apertureX_m{i} = disk.X_m{i};
         disk.apertureY_m{i} = disk.Y_m{i};
-        disk.apertureZ_m{i} = disk.Z_m{i} - .001; %place aperture .001 meters in front of each disk.
+        disk.apertureZ_m{i} = disk.Z_m{i} + .01; %place aperture .001 meters in front of each disk.
+        keyboard
     end
 end
