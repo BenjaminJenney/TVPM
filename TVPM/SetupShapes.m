@@ -88,6 +88,7 @@ function shape = SetupShapes(ds, pa)
     
     %shape.disk.coords   = randn(3,100);
     shape.disk.size_px  = 23; %not totally sure what units this is. glPointSize draws a square with equal sides in pixels, supposedly.
+    shape.disk.size_m   = (1/ds.pixelsPerM)*sqrt(shape.disk.size_px^2 + shape.disk.size_px^2);
     shape.disk.size_deg = shape.disk.size_px * ds.deg_per_px; %1.4888
     
 %     for i = 1:shape.disk.numFrames

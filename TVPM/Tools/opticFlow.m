@@ -56,9 +56,9 @@ function [vX, vY] = opticFlow(ds, pa, xpos_deg, ypos_deg, plane, numPoints, mode
     vX = griddata(xdeg,ydeg,velocityField(1,:),coords(:,1),coords(:,2));
     vY = griddata(xdeg,ydeg,velocityField(2,:),coords(:,1),coords(:,2));
     
-    %{
-        figure; subplot(2,1,1); quiver(xdeg,ydeg,velocityField(1,:),velocityField(2,:),0);
-        subplot(2,1,2); quiver(coords(:,1),coords(:,2),vX,vY,0) % plot to check
-        hold on; scatter(coords(:,1),coords(:,2))
-    %}
-end
+    
+%         figure; subplot(2,1,1); quiver(xdeg,ydeg,velocityField(1,:),velocityField(2,:),0);
+%         subplot(2,1,2); quiver(coords(:,1),coords(:,2),vX,vY,0) % plot to check
+%         hold on; scatter(coords(:,1),coords(:,2))
+    
+ end

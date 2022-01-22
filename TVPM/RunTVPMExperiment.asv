@@ -82,12 +82,22 @@ Screen('BeginOpenGL', ds.w);
 
 type = GL_TEXTURE_2D;
 s1 = 512; s2 = 512;
+sigma = 360;
 [x,y] = meshgrid(-1*(s1/2):(s1/2)-1, -1*(s2/2): (s2/2)-1);
-aperture = zeros(s1,s2);
-gauss = (exp(-((x/90).^2)-((y/90).^2))).*255;
-aperture = repmat(aperture,[ 1 1 4 ]);
-aperture = permute(aperture,[ 3 2 1 ]);
-aperture(4,:,:) = gauss;
+pa.rmin_bg = 45.6874;% pixels 
+pa.rmax_bg = 137.7631;% pixels  
+pa.rstrip = 11.6268;% this cuts a strip into the fixation disk that has a height the size of the paddle height
+aperture = zeros(s1,s2).*255;
+opaque = ones(size(x'));
+opaque = min(opaque, ((sqrt((x').^2+(y').^2) > pa.rmax_bg))); % | ((abs(y') > pa.rstrip) & sqrt((x').^2+(y').^2) < pa.rmin_bg)));
+
+gauss = ((1-exp(-((x/sigma).^2)-((y/sigma).^2)))).*255;
+%keyboard
+ aperture = repmat(aperture,[ 1 1 4 ]);
+ aperture = permute(aperture,[ 3 2 1 ]);
+ aperture(4,:,:) = shiftdim(255 .* opaque, -1);
+  
+     % keyboard
 textureid = glGenTextures(2);
 glBindTexture(type, textureid(1));
 glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.REPEAT);
@@ -102,11 +112,11 @@ glBindTexture(type, textureid(2));
 glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.REPEAT);
 glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
 glTexParameterfv(type, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
-glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR);
-                                    %keyboard
-glTexImage2D(type, 0, GL.RGBA, 512, 512, 0, GL.RGBA, GL.UNSIGNED_BYTE, uint8(aperture));
+glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR); 
+glTexImage2D(type, 0, GL.RGBA, s1, s2, 0, GL.RGBA, GL.UNSIGNED_BYTE, uint8(aperture));
 glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
- %keyboard
+glBindTexture(type,0)
+    %keyboard
  Screen('EndOpenGL', ds.w);
 while ~readyToBegin % confirm everything's ready to go
     
@@ -152,7 +162,7 @@ while ~readyToBegin % confirm everything's ready to go
             end
         end
     end
-    
+    frameiter = 0;
     Screen('DrawingFinished', ds.w);
     ds.vbl = Screen('Flip', ds.w);
     
@@ -166,7 +176,7 @@ end
 %% Participant is ready, so let's start first run of trials
 
 ds.tElapsed = 0;
-ds.fCount = 0;
+ds.fCount = 1;
 
 [ds, pa, kb] = SetupNewTrial(ds, pa, kb);
 ds.vbl = pa.trialOnset;
@@ -179,9 +189,18 @@ kb.nextTrialKey = 0;
 
 rotationMatrixYawHomo = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]; % initialize for simulated condition
 %[hGratings, hPhaseChange, vPhaseChange] = Preprocess(ds,pa,shape,GL);
+
 while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
-    
+    [vXw, vYw] = Preprocess(ds, pa, shape, GL);% m/f in world coords
+    for i = 1:shape.plane.numPlanes
+        posX{i} = shape.disk.X_m{i} + squeeze(vXw(1,1,1,:));
+        posY{i} = shape.disk.Y_m{i} + squeeze(vYw(1,1,1,:));
+        posZ{i} = ones(size(posX{i})) .* shape.plane.depths_m(i); 
+    end
+    k = 1;
     while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
+        
+            
         
         % Get HMD state
         if isempty(ds.hmd) % Oculus is not connected - will display a poor imitation of the Oculus rift on your main computer screen
@@ -200,7 +219,6 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
         
         
         for renderPass = 0:1 %0 left, 1 right eye
-            
             
             if (MONOCULAR && renderPass == 0) || (~MONOCULAR)
                 ds.renderPass = renderPass;
@@ -269,9 +287,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 glPushMatrix;
                 %% Experiment Logic
                 if ds.vbl <  pa.trialOnset + pa.targetMotionDuration % if current time < present until time: draw target, 1 s target motion
-                    if renderPass == 0
-                    pa.frame = pa.frame+1; % frame counter
-                    end
+                    
                     %disp(['frame = ' num2str(pa.frame)])
                     %disp(['vbl = ' num2str(ds.vbl)])
                     
@@ -309,44 +325,6 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     xDotDisplacement = pa.transSpeed.*sind(-1.*pa.heading(pa.trialNumber)).*elapsedTime; % CSB: should be in meters. check. % ATTN: take negative of heading angle, so it displays correctly. otherwise displayed heading is inverse of ground truth
                     % pa.rotVelocityRadPursuit(pa.trialNumber) = deg2radtrialNumber)).*elapsedTime; % CSB: should be in meters. check. % ATTN: take negative of heading angle, so it displays correctly. otherwise displayed heading is inverse of ground truth
                     zDotDisplacement = pa.transSpeed.*cosd(-1.*pa.heading(pa.trialNumber)).*elapsedTime;  % JT: make sure this trig is right.
-                    
-                    %                     glPushMatrix;
-                    %                     glTranslatef(xDotDisplacement,0,zDotDisplacement); % shift the dot world to its position along its trajectory for this frame
-                    %                     moglDrawDots3D(ds.w, pa.sphere, 3, [1 1 1 1], [], 2); %drawing sphere
-                    %                     if ds.real
-                    %                         moglDrawDots3D(ds.w, [0 0 -pa.cubeWidth/4], 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
-                    %                     end
-                    %                     glPopMatrix;
-                    % for simulated rotation:
-                    
-                    %                     tBase = linspace(0, pa.stimulusDuration_sec, pa.nFrames);
-                    %                     % constant rotation velocity
-                    %                     rho = pa.rotVelocityRad*tBase; % angle of rotating camera. change this over time to simulate fixation at some particular world point
-                    %
-                    %                     %time-varying heading based on fixating observer
-                    %                     ly = pa.pursuitTargetDist; % intial distance (depth in Z) to fixation pt at time 0
-                    %                     theta0 = pa.heading(pa.trialNumber); % initial heading angle in degrees
-                    %                     s = pa.transSpeed; %m/s
-                    %
-                    %                     rho = -1 * atand( ( (ly.*tand(theta0)) - ( ( (ly./cosd(theta0)) - s.*tBase).*sind(theta0) ) ) ...
-                    %                         ./ ( ( (ly./cosd(theta0)) - s.*tBase) .*cosd(theta0) )  );  % deg
-                    %
-                    %                     dRho   = gradient(rho);
-                    %                     omegaY = deg2rad(dRho)./ds.ifi; % rad/s
-                    %                     h = rho+theta0; % deg, current heading angle
-                    %
-                    %                     T = [s.*sind(h); zeros(1,length(h)); s.*cosd(h)]; % heading angle = theta0+rho, m/s
-                    %                     rotationMatrixYaw = [cos(rho) 0 sin(rho); 0 1 0; -sin(rho) 0 cos(rho);];
-                    
-                    
-                    %eye.modelView(1:3,1:3) = rotationMatrixYaw*eye.modelView(1:3,1:3);
-                    %initialModelView = eye.modelView; % this just tells you how head has rotated until now
-                    
-                    %setup for pursuit target rotation
-                    %                     thetaPursuit = rad2deg(pa.rotVelocityRadPursuit(pa.trialNumber)*elapsedTime);
-                    %
-                    %                     xPosPursuit = abs(pa.pursuitTargetDist)*sind(thetaPursuit); % radius of circle (euclidean distance to pursuit target) times sine and cosine of angle gives orbit path of pursuit target
-                    %                     zPosPursuit =  abs(pa.pursuitTargetDist)*cosd(thetaPursuit);
                     
                     if ds.simulated
                         % make simulated rotation matrix into homogenous cooridnates and
@@ -393,7 +371,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         
                         moglDrawDots3D(ds.w, [0 0 -pa.cubeWidth/4 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
                     elseif ds.real && planes == 0
-                        
+                        %{
                         %                         glPushMatrix;
                         %                         %glTranslatef(xDotDisplacement,0,zDotDisplacement); % shift the dot world to its position along its trajectory for this frame
                         %                         glEnable(GL.POINT_SPRITE);
@@ -406,7 +384,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         %                         glDisable(GL.POINT_SPRITE);
                         %                         mi = mi+1;
                         %                         glPopMatrix;
-                        
+                        %}
                         if mask == 1, drawTheHoleyBag(ds, 1), end % draws the ptb mask. Params: drawTheHoleyBag(window,[openglEnbled = 1]);
                         
                         glPushMatrix;
@@ -415,8 +393,8 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         moglDrawDots3D(ds.w, [0 0 -pa.cubeWidth/4 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
                         glPopMatrix;
                         
-                    elseif planes == 1
-                        
+                     elseif planes == 1
+                        %{
                         %                            glPushMatrix;
                         %
                         %                            glLoadIdentity;
@@ -452,32 +430,33 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
 %                                glTexSubImage2D(GL_TEXTURE_2D, 0,0,0, diskTexture.width, diskTexture.height, GL_RGB, GL_UNSIGNED_BYTE, uint8(image));
                                  %keyboard
                                  %glEnable(GL_DEPTH_TEST);
+                       %}
+                         glEnable(GL.POINT_SPRITE);
                                  
-                                 glEnable(GL.POINT_SPRITE);
-                                 for i=1:3
+                                 if ds.fCount >= 72
+                                     ds.fCount = 1;
+                                 end
+                                 for i=1:shape.plane.numPlanes
                                     %diskTexture.id = glGenTextures(1);
                                     %glEnable(GL.TEXTURE_2D); % Enable 2D texture mapping
-
-                                    glBindTexture(type, textureid(1));
-
+                                    %glActiveTexture(GL_TEXTURE0);
                                     
-                                    moglDrawDots3D(ds.w, [shape.disk.apertureX_m{i},shape.disk.apertureY_m{i},shape.disk.apertureZ_m{i}]', shape.disk.size_px, [1 1 1 1], [], []);
+                                    glBindTexture( type, textureid(1))
+                                    disp('posX:');
+                                    disp(size(posX{i}));
+                                    disp('posY:');
+                                    disp(size(posY{i}));
+                                    disp('posZ:' ) ;
+                                    disp(size(posZ{i}));
+                                    moglDrawDots3D(ds.w, [posX{i},posY{i},posZ{i}]', shape.disk.size_px, [], [], 0);
+                                    
                                     glBindTexture(type, 0);
                                      %glActiveTexture(GL_TEXTURE0+ 1)
-                                    
-                                 end
-                                 for i = 1:3
-                                    %diskTexture.id = glGenTextures(1);
                                     glBindTexture(type, textureid(2));
-                                    glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.REPEAT);
-                                    glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
-                                    glTexParameterfv(type, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
-                                    glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR);
-                                    %keyboard
-                                    glTexImage2D(type, 0, GL.RGBA, 512, 512, 0, GL.RGBA, GL.UNSIGNED_BYTE, uint8(aperture));
-                                    glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
-                                    moglDrawDots3D(ds.w, [shape.disk.apertureX_m{i},shape.disk.apertureY_m{i},shape.disk.apertureZ_m{i}]', shape.disk.size_px, [1 1 1 1], [], []);
-                                    glBindTexture(GL.TEXTURE_2D, 0)
+                                    
+                                    moglDrawDots3D(ds.w, [posX{i},posY{i}, posZ{i} + .001]', shape.disk.size_px + 10, [], [], []);
+
+                                    glBindTexture(type, 0);
                                  end
                                  glDisable(GL.POINT_SPRITE);
                                  %glBindTexture(GL.TEXTURE_2D, 0);
@@ -737,8 +716,8 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 % Repeat for renderPass of other eye
             end
         end
-        
-        
+        posX{i} = squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
+        posY{i} = vYw(pa.trialNumber, ds.fCount, i, :);
         % Head position tracked in the HMD?
         if ~isempty(ds.hmd)
             if ~bitand(state.tracked, 2) && ds.trackingFlag==1

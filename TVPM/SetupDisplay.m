@@ -125,7 +125,7 @@ if ~isempty(ds.hmd) % CSB: if using hmd
          ds.degreesPerM = ds.hFOV_perPersonAvg/ds.viewportWidthM;
         % ds.viewportWidthDeg = ds.hFOV;
         % ds.pixelsPerDegree = sqrt(RectHeight(ds.windowRect)^2 + RectWidth(ds.windowRect)^2) / ds.viewportWidthDeg;
-        % ds.pixelsPerM = sqrt(RectHeight(ds.windowRect)^2 + RectWidth(ds.windowRect)^2) / ds.viewportWidthM;
+         ds.pixelsPerM = sqrt(RectHeight(ds.windowRect)^2 + RectWidth(ds.windowRect)^2) / ds.viewportWidthM;
         
         % ds.frameRate = 90;
         ds.frameRate = 1./ds.hmdinfo.videoRefreshDuration;
