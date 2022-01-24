@@ -186,7 +186,6 @@ pa.experimentOnset = ds.vbl;
 pa.block = 0;
 kb.nextTrialKey = 0;
 
-
 rotationMatrixYawHomo = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]; % initialize for simulated condition
 %[hGratings, hPhaseChange, vPhaseChange] = Preprocess(ds,pa,shape,GL);
 
@@ -195,9 +194,9 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
     for i = 1:shape.plane.numPlanes
         posX{i} = shape.disk.X_m{i} + squeeze(vXw(1,1,1,:));
         posY{i} = shape.disk.Y_m{i} + squeeze(vYw(1,1,1,:));
-        posZ{i} = ones(size(posX{i})) .* shape.plane.depths_m(i); 
+        %posZ{i} = ones(size(posX{i})) .* shape.plane.depths_m(i); 
     end
-    k = 1;
+    %k = 1;
     while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
         
             
@@ -438,18 +437,20 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                                     %diskTexture.id = glGenTextures(1);
                                     %glEnable(GL.TEXTURE_2D); % Enable 2D texture mapping
                                     %glActiveTexture(GL_TEXTURE0);
-                                    
+                                    %DRAW DISKS
                                     glBindTexture( type, textureid(1))
 
-                                    moglDrawDots3D(ds.w, [posX{i},posY{i},posZ{i}]', shape.disk.size_px, [], [], 0);
+                                    moglDrawDots3D(ds.w, [posX{i},posY{i},shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
                                     
                                     glBindTexture(type, 0);
-                                     %glActiveTexture(GL_TEXTURE0+ 1)
-                                    glBindTexture(type, textureid(2));
-                                    
-                                    moglDrawDots3D(ds.w, [posX{i},posY{i}, posZ{i} + .001]', shape.disk.size_px + 10, [], [], []);
-
-                                    glBindTexture(type, 0);
+                                    %END DRAW DISKS
+                                     %APERTURES
+%                                     glBindTexture(type, textureid(2));
+%                                     
+%                                     moglDrawDots3D(ds.w, [posX{i},posY{i}, shape.disk.Z_m{i} + .001]', shape.disk.size_px + 10, [], [], []);
+% 
+%                                     glBindTexture(type, 0);
+                                     %END APERTURES
                                  end
                                  glDisable(GL.POINT_SPRITE);
                                  %glBindTexture(GL.TEXTURE_2D, 0);
@@ -711,11 +712,18 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
         end
         if ds.fCount >= 71
            ds.fCount = 1;
+%           keyboard;
         end
+        
+%         psX(k) = posX{1};
+%         psY(k) = posY{1}; For plotting optic flow 
+%         psZ(k) = posZ{1};
+%         k = k + 1;
         for i = 1:shape.plane.numPlanes
             posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
             posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
         end
+       
         % Head position tracked in the HMD?
         if ~isempty(ds.hmd)
             if ~bitand(state.tracked, 2) && ds.trackingFlag==1

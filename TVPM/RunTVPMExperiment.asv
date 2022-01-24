@@ -433,21 +433,14 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                        %}
                          glEnable(GL.POINT_SPRITE);
                                  
-                                 if ds.fCount >= 72
-                                     ds.fCount = 1;
-                                 end
+                                 
                                  for i=1:shape.plane.numPlanes
                                     %diskTexture.id = glGenTextures(1);
                                     %glEnable(GL.TEXTURE_2D); % Enable 2D texture mapping
                                     %glActiveTexture(GL_TEXTURE0);
                                     
                                     glBindTexture( type, textureid(1))
-                                    disp('posX:');
-                                    disp(size(posX{i}));
-                                    disp('posY:');
-                                    disp(size(posY{i}));
-                                    disp('posZ:' ) ;
-                                    disp(size(posZ{i}));
+
                                     moglDrawDots3D(ds.w, [posX{i},posY{i},posZ{i}]', shape.disk.size_px, [], [], 0);
                                     
                                     glBindTexture(type, 0);
@@ -716,8 +709,14 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 % Repeat for renderPass of other eye
             end
         end
-        posX{i} = squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
-        posY{i} = vYw(pa.trialNumber, ds.fCount, i, :);
+        if ds.fCount >= 71
+           ds.fCount = 1;
+        end
+        
+        for i = 1:shape.plane.numPlanes
+            posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
+            posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
+        end
         % Head position tracked in the HMD?
         if ~isempty(ds.hmd)
             if ~bitand(state.tracked, 2) && ds.trackingFlag==1
