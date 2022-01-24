@@ -15,8 +15,8 @@ tBase = linspace(0, pa.stimulusDuration_sec, nFrames);
 pa.rotVelocityRad = deg2rad(0);
 ly = pa.pursuitTargetDist; % intial distance (depth in Z) to fixation pt at time 0
 s = pa.transSpeed; %m/s
-vXw = single(zeros(pa.nTrials, pa.nFrames, shape.plane.numPlanes, shape.disk.numDisksPerPlane));
-vYw = single(zeros(size(vXw)));
+vXw = double(zeros(pa.nTrials, pa.nFrames, shape.plane.numPlanes, shape.disk.numDisksPerPlane));
+vYw = double(zeros(size(vXw)));
 planeDist_m = shape.plane.depths_m;
 
 for ii = 1:pa.nTrials
@@ -71,11 +71,12 @@ for ii = 1:pa.nTrials %pa.nTrials = 60 ; BJ: Number of frames per trial is depen
             for i = 1:numPlanes
                 [vX, vY] = opticFlow(ds, pa, shape.disk.xpos_deg{i}, shape.disk.ypos_deg{i}, shape.plane.planes(i), 1050, curMV, t, omegaY, T); % deg/s
 
-                vXw_s = 2.*-planeDist_m(i).*tand(vX./2); % m/s in world coords
+                vXw_s = 2.*planeDist_m(i).*tand(vX./2); % m/s in world coords
                 vXw(ii, t, i, :) = vXw_s.*(pa.stimulusDuration_sec./pa.nFrames); % m/f in world coords
                 
-                vYw_s = 2.*-planeDist_m(i).*tand(vY./2); % m/s in world coords
+                vYw_s = 2.*planeDist_m(i).*tand(vY./2); % m/s in world coords
                 vYw(ii, t, i, :) = vYw_s.*(pa.stimulusDuration_sec./pa.nFrames); % m/f in world coords
+                 
 %                 v = (1/ds.deg_per_px).*vY; % vX and vY are vectors of optic flow for all 180 dots per plane
 %                 u = (1/ds.deg_per_px).*vX;
 %                 
@@ -88,6 +89,21 @@ for ii = 1:pa.nTrials %pa.nTrials = 60 ; BJ: Number of frames per trial is depen
         %end      
     end    
 end
+
+
+% debug CSB jan 24 2022
+% figure;
+% for jj = 1:72
+%     if jj ==1
+%         posX= shape.disk.X_m{3};
+%         posY= shape.disk.Y_m{3};
+%     else
+%         posX= posX+squeeze(vXw(2,jj,3,:));
+%         posY= posY+squeeze(vYw(2,jj,3,:));
+%     end
+%     plot(posX,posY,'.'); hold on; pause(.05);
+% end
+
 tElapsed = toc(tstart)
 
 %for i = 1:360; imagesc(hGratings{i}); pause(ds.ifi); colormap grey; shg; end

@@ -1,6 +1,8 @@
 function [ds, pa, kb, oc] = SetupNewTrial(ds, pa, kb, oc)
 % This sets up a new trial.
 pa.frame =1;
+ds.fCount = 1;
+
 % Flip a coin to determine which staircase to run for each rotationXheading
 % condition (which contributes to one psychometric fucntion
 pa.coinFlip = rand(1);

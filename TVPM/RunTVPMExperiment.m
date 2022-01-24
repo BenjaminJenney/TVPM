@@ -194,19 +194,30 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
 
     %k = 1;
     while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
-            
-        if ds.fCount == 1
-            for i = 1:shape.plane.numPlanes
-                posX{i} = shape.disk.X_m{i};
-                posY{i} = shape.disk.Y_m{i};
-                %posZ{i} = ones(size(posX{i})) .* shape.plane.depths_m(i); 
-            end
-        else 
-            for i = 1:shape.plane.numPlanes
-                posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
-                posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
+        
+        if ds.vbl <  pa.trialOnset + pa.targetMotionDuration % if still presenting stim
+            if ds.fCount == 1
+                for i = 1:shape.plane.numPlanes
+                    posX{i} = shape.disk.X_m{i};
+                    posY{i} = shape.disk.Y_m{i};
+                    %posZ{i} = ones(size(posX{i})) .* shape.plane.depths_m(i);
+                end
+                
+            else
+                for i = 1:shape.plane.numPlanes
+                    posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
+                    posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
+                    
+                end
+                %ds.fCount
             end
         end
+%          vidX(ds.fCount,:) = posX{1}';
+%          vidY(ds.fCount,:) = posY{1}';
+%          
+%         if ds.fCount == 70
+%              keyboard
+%          end
         %}
         % Get HMD state
         if isempty(ds.hmd) % Oculus is not connected - will display a poor imitation of the Oculus rift on your main computer screen
@@ -375,7 +386,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                             
                         end
                         
-                        moglDrawDots3D(ds.w, [0 0 -pa.cubeWidth/4 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
+                        moglDrawDots3D(ds.w, [0 0  shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
                     elseif ds.real && planes == 0
                         %{
                         %                         glPushMatrix;
@@ -396,7 +407,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         glPushMatrix;
                         glTranslatef(xDotDisplacement,0,zDotDisplacement);
                         
-                        moglDrawDots3D(ds.w, [0 0 -pa.cubeWidth/4 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
+                        moglDrawDots3D(ds.w, [0 0  shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
                         glPopMatrix;
                         
                      elseif planes == 1
@@ -446,11 +457,10 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                                     %glActiveTexture(GL_TEXTURE0);
                                     %DRAW DISKS
                                     glBindTexture( type, textureid(1))
-
                                     moglDrawDots3D(ds.w, [posX{i}, posY{i}, shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
                                     %moglDrawDots3D(ds.w, [shape.disk.X_m{i},shape.disk.Y_m{i},shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
                                     glBindTexture(type, 0);
-                                    %plot3(posX{1}, posY{1}, posZ{1}, 'r.'); hold on;  plot3(posX{2}, posY{2}, posZ{2}, 'b.'); hold on; plot3(posX{3}, posY{3}, posZ{3}, 'g.');
+                                    plot3(posX{1}, posY{1},shape.disk.Z_m{1}, 'r.'); hold on;  plot3(posX{2}, posY{2}, shape.disk.Z_m{2}, 'b.'); hold on; plot3(posX{3}, posY{3}, shape.disk.Z_m{3 }, 'g.');
                                     %plot3(shape.disk.X_m{1}, shape.disk.Y_m{1}, shape.disk.Z_m{1}, 'r.'); hold on;  plot3(shape.disk.X_m{2}, shape.disk.Y_m{2}, shape.disk.Z_m{2}, 'b.'); hold on; plot3(shape.disk.X_m{3}, shape.disk.Y_m{3}, shape.disk.Z_m{3}, 'g.');
                                     %keyboard
                                     %END DRAW DISKS
@@ -501,14 +511,14 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         glPushMatrix;
                         glTranslatef(xDotDisplacement,0,zDotDisplacement); % shift the target to its position along its trajectory for this frame
                         moglDrawDots3D(ds.w, pa.sphere, 3, [1 1 1 1], [], 2); %drawing sphere
-                        moglDrawDots3D(ds.w, [0 0 -pa.cubeWidth/4], 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
+                        moglDrawDots3D(ds.w, [0 0 shape.plane.depths_m(2)], 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
                         glPopMatrix;
                     elseif ds.simulated && planes == 0
                         glPushMatrix;
                         gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
                         moglDrawDots3D(ds.w, pa.sphere, 3, [1 1 1 1], [], 2); %drawing sphere
                         glPopMatrix;
-                        moglDrawDots3D(ds.w, [0 0 -pa.cubeWidth/4 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
+                        moglDrawDots3D(ds.w, [0 0 shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
                     elseif planes == 1
                         
                         %                         glAlphaFunc(GL_GREATER, 0.5); %diskards px fragments below .5 alpha value
@@ -664,13 +674,13 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 elseif kb.responseGiven && ds.vbl >  pa.trialOnset + pa.targetMotionDuration + pa.itiLength && ds.vbl <  pa.trialOnset + pa.targetMotionDuration + pa.itiLength + pa.recenterScreenLength
                     
                     glPushMatrix;
-                    recenteringDotCoords = [0, 0, -20 1]'; % does this do the right thing??? i'm just updating according to the head rotation info from beginning of frame... important to test explicitly somehow if the dot actually appears in a fixed straight ahead in world coords
+                    recenteringDotCoords = [0, 0, shape.plane.depths_m(2), 1]'; % does this do the right thing??? i'm just updating according to the head rotation info from beginning of frame... important to test explicitly somehow if the dot actually appears in a fixed straight ahead in world coords
                     moglDrawDots3D(ds.w, recenteringDotCoords, 40, [1 0 0 1], [], 2);
                     glPopMatrix;
                     
                     glPushMatrix;
                     invModelView = inv(eye.modelView);
-                    moglDrawDots3D(ds.w, inv(modelView)*[pa.fixationVertexPos, 1.0]', pa.fixationDiameter, [1 1 1 1], [], 2); %drawing horizontal fixation dot
+                    moglDrawDots3D(ds.w, inv(modelView)*[[0 0 shape.plane.depths_m(2)], 1.0]', pa.fixationDiameter, [1 1 1 1], [], 2); %drawing horizontal fixation dot
                     glPopMatrix;
                     
                 elseif kb.responseGiven && ds.vbl >= pa.trialOnset + pa.targetMotionDuration + pa.itiLength + pa.recenterScreenLength % when you''ve responded and it's the last frame of the trial, start new trial
@@ -680,7 +690,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 elseif ~kb.responseGiven && ds.vbl >  pa.trialOnset + pa.targetMotionDuration + pa.itiLength && ds.vbl <  pa.trialOnset + pa.targetMotionDuration + pa.itiLength + pa.recenterScreenLength
                     
                     glPushMatrix;
-                    recenteringDotCoords = [0, 0, -20 1]'; % does this do the right thing??? i'm just updating according to the head rotation info from beginning of frame... important to test explicitly somehow if the dot actually appears in a fixed straight ahead in world coords
+                    recenteringDotCoords = [0, 0, shape.plane.depths_m(2), 1]'; % does this do the right thing??? i'm just updating according to the head rotation info from beginning of frame... important to test explicitly somehow if the dot actually appears in a fixed straight ahead in world coords
                     if ds.simulated
                         moglDrawDots3D(ds.w, inv(rotationMatrixYawHomo)*recenteringDotCoords, 40, [1 0 0 1], [], 2); % I think this is close to right but still not completely right bc the recentering dot is being updated according to dot world translation or something FIND OUT> ATTN
                     else
@@ -690,7 +700,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     
                     glPushMatrix;
                     invModelView = inv(eye.modelView);
-                    moglDrawDots3D(ds.w, inv(modelView)*[pa.fixationVertexPos, 1.0]', pa.fixationDiameter, [1 1 1 1], [], 2); %drawing horizontal fixation dot
+                    moglDrawDots3D(ds.w, inv(modelView)*[[0 0 shape.plane.depths_m(2)], 1.0]', pa.fixationDiameter, [1 1 1 1], [], 2); %drawing horizontal fixation dot
                     glPopMatrix;
                     
                 elseif ~kb.responseGiven && ds.vbl >= pa.trialOnset + pa.targetMotionDuration + pa.itiLength + pa.recenterScreenLength % when you've not responded and it's the last frame of the trial, start new trial
@@ -720,10 +730,10 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 % Repeat for renderPass of other eye
             end
         end
-        if ds.fCount >= 71
-           ds.fCount = 1;
+        %if ds.fCount >= 71
+        %   ds.fCount = 1;
 %           keyboard;
-        end
+        %end
         
 %         psX(k) = posX{1};
 %         psY(k) = posY{1}; For plotting optic flow 
