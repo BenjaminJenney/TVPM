@@ -285,8 +285,8 @@ Screen('BlendFunction', ds.w, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 % Make a gaussian aperture with the "alpha" channel
 gaussDim = 200; % px?
 gaussSigma = gaussDim /8; % csb: controls how big the apertures are
-s1 = 1344;
-s2 = 1600;
+s1 = screenXpixels;
+s2 = screenYpixels;
 [xm, ym] = meshgrid(-s2/2+1:s2/2, -s1/2+1:s1/2);
 ym   = randi([-s2/2, s2/2], s2/2, s2/2);
 %gauss = exp(-(((xm .^2) + (ym .^2)) ./ (2 * gaussSigma^2)));

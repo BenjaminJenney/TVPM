@@ -197,8 +197,8 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
             
         if ds.fCount == 1
             for i = 1:shape.plane.numPlanes
-                posX{i} = shape.disk.X_m{i}; %+ squeeze(vXw(1,1,1,:));
-                posY{i} = shape.disk.Y_m{i}; %+ squeeze(vYw(1,1,1,:));
+                posX{i} = shape.disk.X_m{i};
+                posY{i} = shape.disk.Y_m{i};
                 %posZ{i} = ones(size(posX{i})) .* shape.plane.depths_m(i); 
             end
         else 
@@ -207,7 +207,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
             end
         end
-        
+        %}
         % Get HMD state
         if isempty(ds.hmd) % Oculus is not connected - will display a poor imitation of the Oculus rift on your main computer screen
             if ~exist('state')
