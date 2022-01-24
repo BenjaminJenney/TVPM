@@ -88,7 +88,7 @@ elseif pa.TRAINING == 0
 end
 
 % setup rotation velocity, translation velocity, and heading directions
-pa.transSpeed = .5; % m/s
+pa.transSpeed = .2;%.5; % m/s
 %transpeed and planedepth get multiplied by eachother.
 if pa.TRAINING ==1
     pa.rotationVelocities = 0; % deg/s.  if training, use no rotation only

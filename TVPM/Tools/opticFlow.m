@@ -61,4 +61,4 @@ function [vX, vY] = opticFlow(ds, pa, xpos_deg, ypos_deg, plane, numPoints, mode
 %         subplot(2,1,2); quiver(coords(:,1),coords(:,2),vX,vY,0) % plot to check
 %         hold on; scatter(coords(:,1),coords(:,2))
     
- end
+  end

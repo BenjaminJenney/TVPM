@@ -273,7 +273,7 @@ Screen('EndOpenGL', ds.w);
 %% make mask
 % july 8 2021
 % from http://peterscarfe.com/bubblesdemo.html
-%{
+
 % Get the size of the on screen window
 [screenXpixels, screenYpixels] = Screen('WindowSize', ds.w);
 white = WhiteIndex(0);
@@ -326,5 +326,4 @@ for i = 1:numel(xg)
 end
 %%
 
-%}
 ds.ifi = Screen('GetFlipInterval', ds.w); % Get duration of a single frame

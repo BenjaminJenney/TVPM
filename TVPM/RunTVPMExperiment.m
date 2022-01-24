@@ -191,15 +191,22 @@ rotationMatrixYawHomo = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]; % initialize for s
 
 while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
     [vXw, vYw] = Preprocess(ds, pa, shape, GL);% m/f in world coords
-    for i = 1:shape.plane.numPlanes
-        posX{i} = shape.disk.X_m{i} + squeeze(vXw(1,1,1,:));
-        posY{i} = shape.disk.Y_m{i} + squeeze(vYw(1,1,1,:));
-        %posZ{i} = ones(size(posX{i})) .* shape.plane.depths_m(i); 
-    end
+
     %k = 1;
     while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
-        
             
+        if ds.fCount == 1
+            for i = 1:shape.plane.numPlanes
+                posX{i} = shape.disk.X_m{i}; %+ squeeze(vXw(1,1,1,:));
+                posY{i} = shape.disk.Y_m{i}; %+ squeeze(vYw(1,1,1,:));
+                %posZ{i} = ones(size(posX{i})) .* shape.plane.depths_m(i); 
+            end
+        else 
+            for i = 1:shape.plane.numPlanes
+                posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
+                posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
+            end
+        end
         
         % Get HMD state
         if isempty(ds.hmd) % Oculus is not connected - will display a poor imitation of the Oculus rift on your main computer screen
@@ -440,9 +447,12 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                                     %DRAW DISKS
                                     glBindTexture( type, textureid(1))
 
-                                    moglDrawDots3D(ds.w, [posX{i},posY{i},shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
-                                    
+                                    moglDrawDots3D(ds.w, [posX{i}, posY{i}, shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
+                                    %moglDrawDots3D(ds.w, [shape.disk.X_m{i},shape.disk.Y_m{i},shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
                                     glBindTexture(type, 0);
+                                    %plot3(posX{1}, posY{1}, posZ{1}, 'r.'); hold on;  plot3(posX{2}, posY{2}, posZ{2}, 'b.'); hold on; plot3(posX{3}, posY{3}, posZ{3}, 'g.');
+                                    %plot3(shape.disk.X_m{1}, shape.disk.Y_m{1}, shape.disk.Z_m{1}, 'r.'); hold on;  plot3(shape.disk.X_m{2}, shape.disk.Y_m{2}, shape.disk.Z_m{2}, 'b.'); hold on; plot3(shape.disk.X_m{3}, shape.disk.Y_m{3}, shape.disk.Z_m{3}, 'g.');
+                                    %keyboard
                                     %END DRAW DISKS
                                      %APERTURES
 %                                     glBindTexture(type, textureid(2));
@@ -719,11 +729,8 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
 %         psY(k) = posY{1}; For plotting optic flow 
 %         psZ(k) = posZ{1};
 %         k = k + 1;
-        for i = 1:shape.plane.numPlanes
-            posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
-            posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
-        end
-       
+
+%        
         % Head position tracked in the HMD?
         if ~isempty(ds.hmd)
             if ~bitand(state.tracked, 2) && ds.trackingFlag==1
