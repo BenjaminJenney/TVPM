@@ -176,7 +176,7 @@ end
 %% Participant is ready, so let's start first run of trials
 
 ds.tElapsed = 0;
-ds.fCount = 1;
+ds.fCount = 0;
 
 [ds, pa, kb] = SetupNewTrial(ds, pa, kb);
 ds.vbl = pa.trialOnset;
@@ -194,13 +194,16 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
 
     %k = 1;
     while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
+        ds.fCount = ds.fCount + 1; % frame count
         
         if ds.vbl <  pa.trialOnset + pa.targetMotionDuration % if still presenting stim
             if ds.fCount == 1
+                clear posX; clear posY;
                 for i = 1:shape.plane.numPlanes
                     posX{i} = shape.disk.X_m{i};
                     posY{i} = shape.disk.Y_m{i};
                     %posZ{i} = ones(size(posX{i})) .* shape.plane.depths_m(i);
+                    %disp(pa.trialNumber);
                 end
                 
             else
@@ -460,16 +463,16 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                                     moglDrawDots3D(ds.w, [posX{i}, posY{i}, shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
                                     %moglDrawDots3D(ds.w, [shape.disk.X_m{i},shape.disk.Y_m{i},shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
                                     glBindTexture(type, 0);
-                                    plot3(posX{1}, posY{1},shape.disk.Z_m{1}, 'r.'); hold on;  plot3(posX{2}, posY{2}, shape.disk.Z_m{2}, 'b.'); hold on; plot3(posX{3}, posY{3}, shape.disk.Z_m{3 }, 'g.');
+                                    %plot3(posX{1}, posY{1},shape.disk.Z_m{1}, 'r.'); hold on;  plot3(posX{2}, posY{2}, shape.disk.Z_m{2}, 'b.'); hold on; plot3(posX{3}, posY{3}, shape.disk.Z_m{3 }, 'g.');
                                     %plot3(shape.disk.X_m{1}, shape.disk.Y_m{1}, shape.disk.Z_m{1}, 'r.'); hold on;  plot3(shape.disk.X_m{2}, shape.disk.Y_m{2}, shape.disk.Z_m{2}, 'b.'); hold on; plot3(shape.disk.X_m{3}, shape.disk.Y_m{3}, shape.disk.Z_m{3}, 'g.');
                                     %keyboard
                                     %END DRAW DISKS
                                      %APERTURES
-%                                     glBindTexture(type, textureid(2));
-%                                     
-%                                     moglDrawDots3D(ds.w, [posX{i},posY{i}, shape.disk.Z_m{i} + .001]', shape.disk.size_px + 10, [], [], []);
-% 
-%                                     glBindTexture(type, 0);
+                                    glBindTexture(type, textureid(2));
+                                    
+                                    moglDrawDots3D(ds.w, [shape.disk.X_m{i}, shape.disk.Y_m{i}, shape.disk.Z_m{i}+.01]', shape.disk.size_px + 30, [], [], []);
+
+                                    glBindTexture(type, 0);
                                      %END APERTURES
                                  end
                                  glDisable(GL.POINT_SPRITE);
@@ -756,7 +759,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
         Screen('Flip', ds.w,[],[],1);%, [], [], 2);%, ds.vbl + (1-0.5) * ds.ifi);
         % imageArray=Screen(‘GetImage’, windowPtr [,rect] [,bufferName] [,floatprecision=0] [,nrchannels=3])
         ds.vbl = GetSecs();
-        ds.fCount = ds.fCount + 1;
+        
     end
     
     while pa.trialNumber == pa.nTrials && ~pa.readyToBeginRun % confirm everything's ready to go
