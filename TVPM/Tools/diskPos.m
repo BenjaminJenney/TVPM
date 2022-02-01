@@ -25,5 +25,6 @@ function disk = diskPos(ds, disk, plane)
         %disk.apertureZ_m{i} = disk.Z_m{i} + .001; %place aperture .001 meters in front of each disk.
         %keyboard
     end
+    disk.diskPos_m = [cat(1, disk.X_m{:}), cat(1,disk.Y_m{:}), cat(1, disk.Z_m{:})];
     
  end

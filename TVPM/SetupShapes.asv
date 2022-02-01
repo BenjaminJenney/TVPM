@@ -79,8 +79,8 @@ function shape = SetupShapes(ds, pa)
     shape.plane.numPlanes   = numPlanes;
     shape.plane.planes      = [shape.plane.near, shape.plane.mid, shape.plane.far];
     
-    diskTextureWidth   = 32;
-    diskTextureHeight  = 32;
+    diskTextureWidth   = 128;
+    diskTextureHeight  = 128;
     halfDiskTexWidth   = diskTextureWidth/2;
     halfDiskTexHeight  = diskTextureHeight/2;
     
@@ -96,11 +96,15 @@ function shape = SetupShapes(ds, pa)
     shape.disk.size_deg = shape.disk.size_px * ds.deg_per_px; %1.4888
     shape.disk.texture.width = diskTextureWidth;
     shape.disk.texture.height = diskTextureHeight;
+    glPointSize(23);
+    
 %     for i = 1:shape.disk.numFrames
 %         shape.disk.textureArray(i) = PointTexture(GL, GL_TEXTURE_2D, pointTextureWidth, pointTextureHeight, shape.disk.movieData{i}); 
 %     end
+    glGetIntegerv(GL.POINT_SIZE)
     shape.disk.numDisksPerPlane = 60;
     shape.disk.numDisks = shape.disk.numDisksPerPlane * shape.plane.numPlanes;
+    shape.disk = diskPos(ds, shape.disk, shape.plane);
     
     
     Screen('EndOpenGL', ds.w);

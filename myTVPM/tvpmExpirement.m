@@ -91,5 +91,21 @@ function tvpmExperiment(subjectInitials, condition, monocularFlag, trainingFlag)
             readyToBegin=1;
         end
     end
-    
+    ds.tElapsed = 0;
+    ds.fCount = 1;
+
+    [ds, pa, kb] = SetupNewTrial(ds, pa, kb);
+    ds.vbl = pa.trialOnset;
+    tStart = ds.vbl;
+    pa.experimentOnset = ds.vbl;
+
+    pa.block = 0;
+    kb.nextTrialKey = 0;
+
+    rotationMatrixYawHomo = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]; % initialize for simulated condition
+    %[hGratings, hPhaseChange, vPhaseChange] = Preprocess(ds,pa,shape,GL);
+    while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
+        [vXw, vYw] = Preprocess(ds, pa, shape, GL);% m/f in world coords
+         while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
+    end
 end

@@ -1,4 +1,4 @@
-function [vXw, vYw, shape] = Preprocess(ds, pa,shape, GL)
+function [vXw, vYw] = Preprocess(ds, pa,shape, GL)
 
 %hGratings = cell(360,1);
 numPlanes = shape.plane.numPlanes;
@@ -89,7 +89,7 @@ for ii = 1:pa.nTrials %pa.nTrials = 60 ; BJ: Number of frames per trial is depen
         %end      
     end    
 end
-shape.disk = diskPos(ds, shape.disk, shape.plane);
+shape.disk.
 
 
 % debug CSB jan 24 2022
