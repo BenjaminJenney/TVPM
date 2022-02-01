@@ -18,7 +18,7 @@ function disk = diskPos(ds, disk, plane)
         xPlaneWidth_deg = hFOV/(n) - hFOV/(2*n) + T(i);
         yPlaneWidth_deg = vFOV - vFOV/2; %BJ: In GetRandomPoints the y parameter is named YWidth--I do not know why.
         
-        R_deg = sqrt(disk.aptPlane_deg^2 + disk.aptPlane_deg^2);
+        R_deg = sqrt(disk.aptPlane_deg^)
         %xpos_deg = rand(ndp,1) .* hFOV/(n) - hFOV/(2*n) + T(i);
         %ypos_deg = rand(ndp,1) .* vFOV - vFOV/2;
         [xpos_deg, ypos_deg] = GetPointsRandom(ndp, xPlaneWidth_deg, yPlaneWidth_deg, R_deg);

@@ -46,6 +46,7 @@ end
 %% Setup Psychtoolbox for OpenGL 3D rendering support
 % and initialize the mogl OpenGL for Matlab/Octave wrapper:
 global GL; % GL data structure needed for all OpenGL programs
+type = GL.TEXTURE_2D;
 InitializeMatlabOpenGL(1);
 PsychDefaultSetup(2); % the input of 2 means: execute the AssertOpenGL command, execute KbName('UnifyKeyNames') routine, AND unifies the color mode and switches from 0-255 to 0.0-1.0 - color part only impacts the current function or script, not ones that are called
 
@@ -70,53 +71,53 @@ pa.runNumber = 1; % initialize the run counter
 pa.readyToBeginRun = 0; % initialize the ready-to-begin-a-new-run variable
 readyToBegin = 0;
 Screen('BeginOpenGL', ds.w);
-sf = 4; %.1; % cycles per deg
-sf = (ds.deg_per_px).*sf; %1/px_per_deg %convert from deg to 
-af = 2*pi*sf;
-xGrating  = (.5 + .5 * sin(af * shape.disk.texture.x - 0)); % vertically oriented grating
-yGrating  = (.5 + .5 * cos(af * shape.disk.texture.y - 0)); % horiz grating
-plaidData = 255.*((xGrating + yGrating)/2);
-plaidData = repmat(plaidData,[ 1 1 3 ]);
-%x = single(plaidData);
-plaidData = permute(plaidData,[ 3 2 1 ]);
 
-type = GL_TEXTURE_2D;
-s1 = 512; s2 = 512;
-sigma = 360;
-[x,y] = meshgrid(-1*(s1/2):(s1/2)-1, -1*(s2/2): (s2/2)-1);
-pa.rmin_bg = 45.6874/4;% pixels 
-pa.rmax_bg = 137.7631/4;% pixels  
-pa.rstrip = 11.6268;% this cuts a strip into the fixation disk that has a height the size of the paddle height
-aperture = zeros(s1,s2).*255;
-opaque = ones(size(x'));
-opaque = min(opaque, ((sqrt((x').^2+(y').^2) > pa.rmax_bg))); % | ((abs(y') > pa.rstrip) & sqrt((x').^2+(y').^2) < pa.rmin_bg)));
-
-%gauss = ((1-exp(-((x/sigma).^2)-((y/sigma).^2)))).*255;
-%keyboard
- aperture = repmat(aperture,[ 1 1 4 ]);
- aperture = permute(aperture,[ 3 2 1 ]);
- aperture(4,:,:) = shiftdim(255 .* opaque, -1);
-  
-     % keyboard
-textureid = glGenTextures(2);
-glBindTexture(type, textureid(1));
-glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.REPEAT);
-glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
-glTexParameterfv(type, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
-glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR);
-glTexImage2D(type, 0, GL.RGB, shape.disk.texture.width, shape.disk.texture.width, 0, GL.RGB, GL.UNSIGNED_BYTE, uint8(plaidData));
-glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
-glBindTexture(type,0);
-
-glBindTexture(type, textureid(2));
-glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.REPEAT);
-glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
-glTexParameterfv(type, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
-glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR); 
-glTexImage2D(type, 0, GL.RGBA, s1, s2, 0, GL.RGBA, GL.UNSIGNED_BYTE, uint8(aperture));
-glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
-glBindTexture(type,0)
-    %keyboard
+%{ sf = 4; %.1; % cycles per deg
+% sf = (ds.deg_per_px).*sf; %1/px_per_deg %convert from deg to 
+% af = 2*pi*sf;
+% xGrating  = (.5 + .5 * sin(af * shape.disk.texture.x - 0)); % vertically oriented grating
+% yGrating  = (.5 + .5 * cos(af * shape.disk.texture.y - 0)); % horiz grating
+% plaidData = 255.*((xGrating + yGrating)/2);
+% plaidData = repmat(plaidData,[ 1 1 3 ]);
+% %x = single(plaidData);
+% plaidData = permute(plaidData,[ 3 2 1 ]);
+% 
+% type = GL_TEXTURE_2D;
+% s1 = 64; s2 = 64;
+% [x,y] = meshgrid(-1*(s1/2):(s1/2)-1, -1*(s2/2): (s2/2)-1);
+% pa.rmin_bg = 45.6874;% pixels 
+% pa.rmax_bg = 137.7631;% pixels  
+% pa.rstrip = 11.6268;% this cuts a strip into the fixation disk that has a height the size of the paddle height
+% aperture = zeros(s1,s2).*255;
+% opaque = ones(size(x'));
+% opaque = min(opaque, ((sqrt((x').^2+(y').^2) > pa.rmax_bg))); % | ((abs(y') > pa.rstrip) & sqrt((x').^2+(y').^2) < pa.rmin_bg)));
+% 
+% %gauss = ((1-exp(-((x/sigma).^2)-((y/sigma).^2)))).*255;
+% %keyboard
+%  aperture = repmat(aperture,[ 1 1 4 ]);
+%  aperture = permute(aperture,[ 3 2 1 ]);
+%  aperture(4,:,:) = shiftdim(255 .* opaque, -1);
+%   
+%      % keyboard
+% textureid = glGenTextures(2);
+% glBindTexture(type, textureid(1));
+% glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.REPEAT);
+% glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
+% glTexParameterfv(type, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
+% glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR);
+% glTexImage2D(type, 0, GL.RGB, shape.disk.texture.width, shape.disk.texture.width, 0, GL.RGB, GL.UNSIGNED_BYTE, uint8(plaidData));
+% glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
+% glBindTexture(type,0);
+% 
+% glBindTexture(type, textureid(2));
+% glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.REPEAT);
+% glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
+% glTexParameterfv(type, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
+% glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR); 
+% glTexImage2D(type, 0, GL.RGBA, s1, s2, 0, GL.RGBA, GL.UNSIGNED_BYTE, uint8(aperture));
+% glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
+% glBindTexture(type,0)
+    %keyboard %}
  Screen('EndOpenGL', ds.w);
 while ~readyToBegin % confirm everything's ready to go
     
@@ -191,8 +192,6 @@ rotationMatrixYawHomo = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]; % initialize for s
 
 while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
     [vXw, vYw, shape] = Preprocess(ds, pa, shape, GL);% m/f in world coords
-
-    %k = 1;
     while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
         ds.fCount = ds.fCount + 1; % frame count
         
@@ -300,7 +299,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 glMatrixMode(GL.MODELVIEW);
                 glLoadMatrixd(modelView); % updates openGL camera
                 
-                glClearColor(0, 0, 0, 1); % gray background
+                glClearColor(0.5, 0.5, 0.5, 1); % gray background
                 glClear(); % clear the buffers - must be done for every frame
                 glColor3f(1,1,1);
                 
@@ -452,14 +451,9 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                                  %glEnable(GL_DEPTH_TEST);
                        %}
                          glEnable(GL.POINT_SPRITE);
-                                 
-                                 
                                  for i=1:shape.plane.numPlanes
-                                    %diskTexture.id = glGenTextures(1);
-                                    %glEnable(GL.TEXTURE_2D); % Enable 2D texture mapping
-                                    %glActiveTexture(GL_TEXTURE0);
                                     %DRAW DISKS
-                                    glBindTexture( type, textureid(1))
+                                    glBindTexture(type, shape.disk.texture.id)
                                     moglDrawDots3D(ds.w, [posX{i}, posY{i}, shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
                                     %moglDrawDots3D(ds.w, [shape.disk.X_m{i},shape.disk.Y_m{i},shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
                                     glBindTexture(type, 0);
@@ -468,11 +462,11 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                                     %keyboard
                                     %END DRAW DISKS
                                      %APERTURES
-%                                     glBindTexture(type, textureid(2));
-%                                     
-%                                     moglDrawDots3D(ds.w, [shape.disk.X_m{i}, shape.disk.Y_m{i}, shape.disk.Z_m{i}+.01]', shape.disk.size_px + 30, [], [], []);
-% 
-%                                     glBindTexture(type, 0);
+                                    glBindTexture(type, shape.disk.texture.aptrId);
+                                    
+                                    moglDrawDots3D(ds.w, [shape.disk.X_m{i}, shape.disk.Y_m{i}, shape.disk.Z_m{i}+.01]', shape.disk.aptPlane_px, [], [], []);
+
+                                    glBindTexture(type, 0);
                                      %END APERTURES
                                  end
                                  glDisable(GL.POINT_SPRITE);

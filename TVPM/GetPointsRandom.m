@@ -5,8 +5,8 @@ dist_2  = R ^ 2;  % Squared once instead of SQRT each time
 iLoop   = 1;      % Security break to yoid infinite loop
 nValid  = 0;
 while nValid < nWant && iLoop < 1e6 %%NEEDFIX: the plane may not be wide enough to support points s.t R > radius(disk) where numdisks >= 180 per plane (not enough space for disks that do not overlap.)
-  newX = XWidth * (rand); %- 0.5);
-  newY = YWidth * (rand); %- 0.5);
+  newX = XWidth * (rand - 0.5);
+  newY = YWidth * (rand - 0.5);
   if all(((X(1:nValid) - newX).^2 + (Y(1:nValid) - newY).^2) > dist_2)
     % Success: The new point does not touch existing points:
     nValid    = nValid + 1;  % Append this point

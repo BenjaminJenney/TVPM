@@ -18,7 +18,7 @@ s = pa.transSpeed; %m/s
 vXw = double(zeros(pa.nTrials, pa.nFrames, shape.plane.numPlanes, shape.disk.numDisksPerPlane));
 vYw = double(zeros(size(vXw)));
 planeDist_m = shape.plane.depths_m;
-
+shape.disk = diskPos(ds, shape.disk, shape.plane);
 for ii = 1:pa.nTrials
     for dd = 1:pa.numHeadingAngles
         if pa.headingAngleVecRandThisRun(ii) == dd
@@ -89,7 +89,7 @@ for ii = 1:pa.nTrials %pa.nTrials = 60 ; BJ: Number of frames per trial is depen
         %end      
     end    
 end
-shape.disk = diskPos(ds, shape.disk, shape.plane);
+
 
 
 % debug CSB jan 24 2022

@@ -2,7 +2,9 @@ function shape = SetupShapes(ds, pa)
     InitializeMatlabOpenGL(1);
     global GL;
     Screen('BeginOpenGL', ds.w);
-    %Set up texture for the three planes
+    type = GL.TEXTURE_2D;
+    %% Set up texture and dimensions for the three planes
+    
     planeTextureWidth_px   = (ds.hFOV_perPersonAvg/3) * ds.px_per_deg;
     planeTextureHeight_px  = (ds.vFOV_perPersonAvg) * ds.px_per_deg;
 
@@ -78,34 +80,74 @@ function shape = SetupShapes(ds, pa)
     shape.plane.offsets_deg = [-ds.hFOV_perPersonAvg/3, 0, ds.hFOV_perPersonAvg/3]; 
     shape.plane.numPlanes   = numPlanes;
     shape.plane.planes      = [shape.plane.near, shape.plane.mid, shape.plane.far];
+   
+    %% Set up texture and dimensions for the Disks and apertures
     
-    diskTextureWidth   = 128;
-    diskTextureHeight  = 128;
+    diskTextureWidth   = 32;
+    diskTextureHeight  = 32;
     halfDiskTexWidth   = diskTextureWidth/2;
     halfDiskTexHeight  = diskTextureHeight/2;
     
     [shape.disk.texture.x,shape.disk.texture.y] = meshgrid(-halfDiskTexWidth+1:halfDiskTexWidth,-halfDiskTexHeight+1:halfDiskTexHeight);
-    %u = 1; v = 1;
-    %[shape.disk.movieData, shape.disk.numFrames] = moviePlaidData(ds,pa,x,y,u,v);
-
     
-    
-    %shape.disk.coords   = randn(3,100);
-    shape.disk.size_px  = 23; %not totally sure what units this is. glPointSize draws a square with equal sides in pixels, supposedly.
-    shape.disk.size_m   = (1/ds.pixelsPerM)*sqrt(shape.disk.size_px^2 + shape.disk.size_px^2);
-    shape.disk.size_deg = shape.disk.size_px * ds.deg_per_px; %1.4888
-    shape.disk.texture.width = diskTextureWidth;
+    diskSize_px               = 23;
+    apertPlaneSize_px         = diskSize_px*2;
+    diskSize_deg              = diskSize_px*ds.deg_per_px;
+    apertPlaneSize_deg        = apertPlaneSize_px*ds.deg_per_px; 
+    shape.disk.size_px        = diskSize_px; %not totally sure what units this is. glPointSize draws a square with equal sides in pixels, supposedly.
+    shape.disk.size_m         = (1/ds.pixelsPerM)*sqrt(diskSize_px^2 + diskSize_px^2);
+    shape.disk.size_deg       = diskSize_deg;
+    shape.disk.aptPlane_px    = apertPlaneSize_px;
+    shape.disk.aptPlane_m     = (1/ds.pixelsPerM)*sqrt(apertPlaneSize_px^2 + apertPlaneSize_px^2);
+    shape.disk.aptPlane_deg   = apertPlaneSize_deg;
+    shape.disk.texture.width  = diskTextureWidth;
     shape.disk.texture.height = diskTextureHeight;
-    glPointSize(23);
     
-%     for i = 1:shape.disk.numFrames
-%         shape.disk.textureArray(i) = PointTexture(GL, GL_TEXTURE_2D, pointTextureWidth, pointTextureHeight, shape.disk.movieData{i}); 
-%     end
-    glGetIntegerv(GL.POINT_SIZE)
-    shape.disk.numDisksPerPlane = 60;
+    shape.disk.numDisksPerPlane = 30;
     shape.disk.numDisks = shape.disk.numDisksPerPlane * shape.plane.numPlanes;
-    shape.disk = diskPos(ds, shape.disk, shape.plane);
+    
+    sf        = 4; %.1; % cycles per deg
+    sf        = (ds.deg_per_px).*sf; %1/px_per_deg %convert from deg to 
+    af        = 2*pi*sf;
+    xGrating  = (.5 + .5 * sin(af * shape.disk.texture.x - 0)); % vertically oriented grating
+    yGrating  = (.5 + .5 * cos(af * shape.disk.texture.y - 0)); % horiz grating
+    plaidData = 255.*((xGrating + yGrating)/2);
+    plaidData = repmat(plaidData,[ 1 1 3 ]);
+    plaidData = permute(plaidData,[ 3 2 1 ]);
+    
+    textureid = glGenTextures(2);
+    glBindTexture(type, textureid(1));
+        glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.REPEAT);
+        glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
+        glTexParameterfv(type, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
+        glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR);
+        glTexImage2D(type, 0, GL.RGB, shape.disk.texture.width, shape.disk.texture.width, 0, GL.RGB, GL.UNSIGNED_BYTE, uint8(plaidData));
+        glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
+    glBindTexture(type,0);
+    
+    % APERTURES:
+    [x,y]         = meshgrid(-1*(apertPlaneSize_px/2):(apertPlaneSize_px/2)-1, -1*(apertPlaneSize_px/2): (apertPlaneSize_px/2)-1);
+    %rmin_bg    = 45.6874;% pixels 
+    apertureSize_px = 137.7631;% pixels  Not sure what dimension 
+    %pa.rstrip     = 11.6268;% this cuts a strip into the fixation disk that has a height the size of the paddle height
+    aperturePlane = zeros(apt,s2);
+    aperture      = ones(size(x'));
+    aperture      = min(aperture, ((sqrt((x').^2+(y').^2) > apertureSize_px))); % | ((abs(y') > pa.rstrip) & sqrt((x').^2+(y').^2) < pa.rmin_bg)));
+    aperturePlane = repmat(aperturePlane,[ 1 1 4 ]);
+    aperturePlane = permute(aperturePlane,[ 3 2 1 ]);
+    aperturePlane(4,:,:) = shiftdim(255 .* aperture, -1);
+    
+    glBindTexture(type, textureid(2));
+        glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.REPEAT);
+        glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
+        glTexParameterfv(type, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
+        glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR); 
+        glTexImage2D(type, 0, GL.RGBA, apertPlaneSize_px, apertPlaneSize_px, 0, GL.RGBA, GL.UNSIGNED_BYTE, uint8(aperturePlane));
+        glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
+    glBindTexture(type,0)
     
     
+    shape.disk.texture.id     = textureid(1);
+    shape.disk.texture.aptrId = textureid(2);
     Screen('EndOpenGL', ds.w);
 end
