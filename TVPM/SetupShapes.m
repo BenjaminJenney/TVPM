@@ -7,7 +7,8 @@ function shape = SetupShapes(ds, pa)
     
     planeTextureWidth_px   = (ds.hFOV_perPersonAvg/3) * ds.px_per_deg;
     planeTextureHeight_px  = (ds.vFOV_perPersonAvg) * ds.px_per_deg;
-
+      shape.plane.TextureWidth_px  = planeTextureWidth_px;
+    shape.plane.TextureHeight_px = planeTextureHeight_px;
     xHalfTextureSize = planeTextureWidth_px/2;
     yHalfTextureSize = floor(planeTextureHeight_px/2);
 
@@ -21,8 +22,8 @@ function shape = SetupShapes(ds, pa)
 
     % Setup vertices for the three planes
     
-    depths_m     = [-.5, -1, -2]; % near, mid, far.
-    numPlanes    = length(depths_m);
+    depths_m  = [-.5, -1, -2]; % near, mid, far.
+    numPlanes = length(depths_m);
     widths_m  = zeros(1, numPlanes);
     heights_m = zeros(1, numPlanes);
      for i = 1:numPlanes
@@ -37,14 +38,14 @@ function shape = SetupShapes(ds, pa)
         0 1];
 
     shape.plane.listIds = zeros(1, numPlanes);
-    
+    shape.plane.vertices = {};
     for i = 1:numPlanes
 
         ithPlaneVertices =[-widths_m(i)/2 -heights_m(i)/2 depths_m(i) ;... 
                             widths_m(i)/2 -heights_m(i)/2 depths_m(i) ;...
                             widths_m(i)/2  heights_m(i)/2 depths_m(i) ;...
                            -widths_m(i)/2  heights_m(i)/2 depths_m(i) ]';
-
+        shape.plane.vertices{i} = ithPlaneVertices;
         %ds.initPositions{i} = opticFlow(shape.plane.widths_m(i), shape.plane.heights_m(i), shape.plane.depths_m(i), 50);
         shape.plane.listIds(i) = glGenLists(1);
 
@@ -80,7 +81,7 @@ function shape = SetupShapes(ds, pa)
     shape.plane.offsets_deg = [-ds.hFOV_perPersonAvg/3, 0, ds.hFOV_perPersonAvg/3]; 
     shape.plane.numPlanes   = numPlanes;
     shape.plane.planes      = [shape.plane.near, shape.plane.mid, shape.plane.far];
-   
+    shape.plane.numVertices = numVertices;
     %% Set up texture and dimensions for the Disks and apertures
     
     diskTextureWidth   = 32;
@@ -90,9 +91,9 @@ function shape = SetupShapes(ds, pa)
     
     [shape.disk.texture.x,shape.disk.texture.y] = meshgrid(-halfDiskTexWidth+1:halfDiskTexWidth,-halfDiskTexHeight+1:halfDiskTexHeight);
     
-    diskSize_px               = 23;
+    diskSize_px               = 32;
     apertPlaneSize_px         = diskSize_px*2;
-    diskSize_deg              = diskSize_px*ds.deg_per_px;
+    diskSize_deg              = diskSize_px*ds.deg_per_px; %2.0714
     apertPlaneSize_deg        = apertPlaneSize_px*ds.deg_per_px; 
     shape.disk.size_px        = diskSize_px; %not totally sure what units this is. glPointSize draws a square with equal sides in pixels, supposedly.
     shape.disk.size_m         = (1/ds.pixelsPerM)*sqrt(diskSize_px^2 + diskSize_px^2);
@@ -103,10 +104,11 @@ function shape = SetupShapes(ds, pa)
     shape.disk.texture.width  = diskTextureWidth;
     shape.disk.texture.height = diskTextureHeight;
     
-    shape.disk.numDisksPerPlane = 30;
+    shape.disk.numDisksPerPlane = 10;
     shape.disk.numDisks = shape.disk.numDisksPerPlane * shape.plane.numPlanes;
+    shape.disk = diskPos(ds, shape.disk, shape.plane);
     
-    sf        = .2; %.1; % cycles per deg
+    sf        = 2; %.1; % cycles per deg
     sf        = (ds.deg_per_px).*sf; %1/px_per_deg %convert from deg to 
     af        = 2*pi*sf;
     xGrating  = (.5 + .5 * sin(af * shape.disk.texture.x - 0)); % vertically oriented grating
@@ -124,8 +126,11 @@ function shape = SetupShapes(ds, pa)
         glTexImage2D(type, 0, GL.RGB, shape.disk.texture.width, shape.disk.texture.width, 0, GL.RGB, GL.UNSIGNED_BYTE, uint8(plaidData));
         glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
     glBindTexture(type,0);
+    %% Masks
+    
     
     % APERTURES:
+    %{
     [x,y]         = meshgrid(-1*(apertPlaneSize_px/2):(apertPlaneSize_px/2)-1, -1*(apertPlaneSize_px/2): (apertPlaneSize_px/2)-1);
     %rmin_bg    = 45.6874;% pixels 
     apertureSize_px = 20; %137.7631;% pixels  Not sure what dimension 
@@ -146,7 +151,7 @@ function shape = SetupShapes(ds, pa)
         glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
     glBindTexture(type,0)
     
-    
+    %}
     shape.disk.texture.id     = textureid(1);
     shape.disk.texture.aptrId = textureid(2);
     Screen('EndOpenGL', ds.w);

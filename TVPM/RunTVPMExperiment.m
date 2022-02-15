@@ -46,7 +46,7 @@ end
 %% Setup Psychtoolbox for OpenGL 3D rendering support
 % and initialize the mogl OpenGL for Matlab/Octave wrapper:
 global GL; % GL data structure needed for all OpenGL programs
-type = GL.TEXTURE_2D;
+
 InitializeMatlabOpenGL(1);
 PsychDefaultSetup(2); % the input of 2 means: execute the AssertOpenGL command, execute KbName('UnifyKeyNames') routine, AND unifies the color mode and switches from 0-255 to 0.0-1.0 - color part only impacts the current function or script, not ones that are called
 
@@ -71,7 +71,8 @@ pa.runNumber = 1; % initialize the run counter
 pa.readyToBeginRun = 0; % initialize the ready-to-begin-a-new-run variable
 readyToBegin = 0;
 Screen('BeginOpenGL', ds.w);
-
+%mask3DScratch(ds,pa)
+type = GL.TEXTURE_2D;
 %{ sf = 4; %.1; % cycles per deg
 % sf = (ds.deg_per_px).*sf; %1/px_per_deg %convert from deg to 
 % af = 2*pi*sf;
@@ -191,10 +192,52 @@ rotationMatrixYawHomo = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]; % initialize for s
 %[hGratings, hPhaseChange, vPhaseChange] = Preprocess(ds,pa,shape,GL);
 
 while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
+    Screen('BeginOpenGL', ds.w);
+    shape.disk = diskPos(ds, shape.disk, shape.plane);
+    corners = [0 0; 1 0; 1 1; 0 1];
+    maskTexWidth  = floor(shape.plane.TextureWidth_px);
+    maskTexHeight = floor(shape.plane.TextureHeight_px);
+    blackTexData = zeros(maskTexWidth, maskTexHeight);
+    blackTexData = repmat(blackTexData,[ 1 1 3 ]);
+    blackTexData = permute(uint8(blackTexData),[ 3 2 1 ]);
+    apertureSize_px = 10;
+    [x,y]  = meshgrid(-(maskTexWidth/2)+1:(maskTexWidth/2), -(maskTexHeight/2)+1:maskTexHeight/2);
+    opaque = ones(size(x'));
+    maskWidths_m  = zeros(1, shape.plane.numPlanes);
+    maskHeights_m = zeros(1, shape.plane.numPlanes);
+    maskDepths_m  = [-0.4,-0.9,-1.9];
+    for i = 1:shape.plane.numPlanes
+        maskWidths_m(i)  = 2 * -maskDepths_m(i) * tand((ds.hFOV_perPersonAvg/shape.plane.numPlanes)/2);
+        maskHeights_m(i) = 2 * -maskDepths_m(i) * tand(ds.vFOV_perPersonAvg/2);
+    end
+    
+    for i = 1:shape.plane.numPlanes
+        for j = 1:shape.disk.numDisksPerPlane
+            opaque = min(opaque, sqrt(((x' + shape.disk.X_px{i}(j)).^2 + (y'+shape.disk.Y_px{i}(j)).^2))>apertureSize_px);
+        end
+        ithMaskVertices = [-maskWidths_m(i) -maskHeights_m maskDepths_m(i);...
+                            maskWidths_m(i) -maskHeights_m maskDepths_m(i);...
+                            maskWidths_m(i)  maskHeights_m maskDepths_m(i);...
+                           -maskWidths_m(i)  maskHeights_m maskDepths_m(i)]';
+        blckDat = blackTexData;
+        blckDat(4,:,:) = shiftdim(255 .* opaque', -1);
+        shape.mask.texture(i) = Texture(GL, type, maskTexWidth, maskTexHeight, blckDat);
+        shape.mask.listIds(i) = glGenLists(1);
+        glNewList(shape.mask.listIds(i), GL.COMPILE);
+            shape.mask.texture(i).bind
+            glBegin(GL.POLYGON);
+            for j = 1:shape.plane.numVertices
+                glTexCoord2dv(corners(j,:));
+                glVertex3dv(ithMaskVertices(:,j));
+            end
+            glEnd;
+            shape.mask.texture(i).unbind;
+       glEndList();
+    end
+    Screen('EndOpenGL', ds.w);
     [vXw, vYw, shape] = Preprocess(ds, pa, shape, GL);% m/f in world coords
     while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
         ds.fCount = ds.fCount + 1; % frame count
-        
         if ds.vbl <  pa.trialOnset + pa.targetMotionDuration % if still presenting stim
             if ds.fCount == 1
                 clear posX; clear posY;
@@ -452,6 +495,20 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                        %}
                          glEnable(GL.POINT_SPRITE);
                                  for i=1:shape.plane.numPlanes
+                                    glPushMatrix;
+                                    glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
+                                    glCallList(shape.mask.listIds(1));
+                                    glPopMatrix;
+
+                                    glPushMatrix;
+                                    glTranslatef(0.0, 0.0, 0.0);
+                                    glCallList(shape.mask.listIds(2));
+                                    glPopMatrix;
+
+                                    glPushMatrix;
+                                    glTranslatef(shape.plane.widths_m(3), 0.0, 0.0);
+                                    glCallList(shape.mask.listIds(3));
+                                    glPopMatrix;
                                     %DRAW DISKS
                                     glBindTexture(type, shape.disk.texture.id)
                                     moglDrawDots3D(ds.w, [posX{i}, posY{i}, shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
@@ -462,11 +519,11 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                                     %keyboard
                                     %END DRAW DISKS
                                      %APERTURES
-                                    glBindTexture(type, shape.disk.texture.aptrId);
-                                    
-                                    moglDrawDots3D(ds.w, [shape.disk.X_m{i}, shape.disk.Y_m{i}, shape.disk.Z_m{i}+.01]', shape.disk.aptPlane_px, [], [], []);
-
-                                    glBindTexture(type, 0);
+%                                     glBindTexture(type, shape.disk.texture.aptrId);
+%                                     
+%                                     moglDrawDots3D(ds.w, [shape.disk.X_m{i}, shape.disk.Y_m{i}, shape.disk.Z_m{i}+.01]', shape.disk.aptPlane_px, [], [], []);
+% 
+%                                     glBindTexture(type, 0);
                                      %END APERTURES
                                  end
                                  glDisable(GL.POINT_SPRITE);

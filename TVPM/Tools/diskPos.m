@@ -6,6 +6,9 @@ function disk = diskPos(ds, disk, plane)
     n      = plane.numPlanes;
     ndp    = disk.numDisksPerPlane;
     Z      = plane.depths_m;
+    
+    m_per_px = 0.0002645833; %m/px
+    px_per_m = 1/m_per_px; %px/m
     disk.xpos_deg = {};
     disk.ypos_deg = {};
     disk.X_m = {};
@@ -24,9 +27,11 @@ function disk = diskPos(ds, disk, plane)
         [xpos_deg, ypos_deg] = GetPointsRandom(ndp, xPlaneWidth_deg, yPlaneWidth_deg, R_deg);
         disk.xpos_deg{i} = xpos_deg;
         disk.ypos_deg{i} = ypos_deg;
-        disk.X_m{i} = 2 .* Z(i).* tand(xpos_deg./2);
-        disk.Y_m{i} = 2 .* Z(i).* tand(ypos_deg./2);
-        disk.Z_m{i} = ones(ndp,1).*Z(i);%disk.Z_m{i} = ones(180,1).*Z(i);
+        disk.X_m{i}  = 2 .* Z(i).* tand(xpos_deg./2);
+        disk.Y_m{i}  = 2 .* Z(i).* tand(ypos_deg./2);
+        disk.Z_m{i}  = ones(ndp,1).*Z(i);%disk.Z_m{i} = ones(180,1).*Z(i);
+        disk.X_px{i} = disk.X_m{i} .* px_per_m;
+        disk.Y_px{i} = disk.Y_m{i} .* px_per_m;
         %disk.apertureZ_m{i} = disk.Z_m{i} + .001; %place aperture .001 meters in front of each disk.
         %keyboard
     end
