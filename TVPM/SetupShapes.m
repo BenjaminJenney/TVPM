@@ -47,18 +47,18 @@ function shape = SetupShapes(ds, pa)
                            -widths_m(i)/2  heights_m(i)/2 depths_m(i) ]';
         shape.plane.vertices{i} = ithPlaneVertices;
         %ds.initPositions{i} = opticFlow(shape.plane.widths_m(i), shape.plane.heights_m(i), shape.plane.depths_m(i), 50);
-        shape.plane.listIds(i) = glGenLists(1);
-
-        glNewList(shape.plane.listIds(i), GL.COMPILE);
-            shape.plane.texture.bind;
-            glBegin(GL.POLYGON);
-            for j = 1:numVertices
-                glTexCoord2dv(corners(j,:));
-                glVertex3dv(ithPlaneVertices(:,j));
-            end
-            glEnd;
-            shape.plane.texture.unbind;
-        glEndList(); 
+%         shape.plane.listIds(i) = glGenLists(1);
+% 
+%         glNewList(shape.plane.listIds(i), GL.COMPILE);
+%             shape.plane.texture.bind;
+%             glBegin(GL.POLYGON);
+%             for j = 1:numVertices
+%                 glTexCoord2dv(corners(j,:));
+%                 glVertex3dv(ithPlaneVertices(:,j));
+%             end
+%             glEnd;
+%             shape.plane.texture.unbind;
+%         glEndList(); 
     end
     
     shape.plane.depths_m  = depths_m;
@@ -117,7 +117,7 @@ function shape = SetupShapes(ds, pa)
     plaidData = repmat(plaidData,[ 1 1 3 ]);
     plaidData = permute(plaidData,[ 3 2 1 ]);
     
-    textureid = glGenTextures(2);
+    textureid = glGenTextures(1);
     glBindTexture(type, textureid(1));
         glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.REPEAT);
         glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
@@ -152,7 +152,7 @@ function shape = SetupShapes(ds, pa)
     glBindTexture(type,0)
     
     %}
-    shape.disk.texture.id     = textureid(1);
-    shape.disk.texture.aptrId = textureid(2);
+    shape.disk.texture.id     = textureid;
+    %shape.disk.texture.aptrId = textureid(2);
     Screen('EndOpenGL', ds.w);
 end

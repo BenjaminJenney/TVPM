@@ -194,34 +194,43 @@ rotationMatrixYawHomo = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]; % initialize for s
 while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
     Screen('BeginOpenGL', ds.w);
     shape.disk = diskPos(ds, shape.disk, shape.plane);
-    corners = [0 0; 1 0; 1 1; 0 1];
-    maskTexWidth  = floor(shape.plane.TextureWidth_px);
-    maskTexHeight = floor(shape.plane.TextureHeight_px);
-    blackTexData = zeros(maskTexWidth, maskTexHeight);
-    blackTexData = repmat(blackTexData,[ 1 1 3 ]);
-    blackTexData = permute(uint8(blackTexData),[ 3 2 1 ]);
-    apertureSize_px = 10;
-    [x,y]  = meshgrid(-(maskTexWidth/2)+1:(maskTexWidth/2), -(maskTexHeight/2)+1:maskTexHeight/2);
-    opaque = ones(size(x'));
+    corners = [0 0; 
+               1 0; 
+               1 1; 
+               0 1];
+    maskTexHalfWidth  = floor(shape.plane.TextureWidth_px/2);
+    maskTexHalfHeight = floor(shape.plane.TextureHeight_px/2);
+    
+    apertureSize_px = 20;
+    [x,y]  = meshgrid(-maskTexHalfWidth+1:maskTexHalfWidth, -maskTexHalfHeight+1:maskTexHalfHeight);
+    opaque = ones(size(x));
     maskWidths_m  = zeros(1, shape.plane.numPlanes);
     maskHeights_m = zeros(1, shape.plane.numPlanes);
-    maskDepths_m  = [-0.4,-0.9,-1.9];
+    maskDepths_m  = shape.plane.depths_m + .001;
     for i = 1:shape.plane.numPlanes
         maskWidths_m(i)  = 2 * -maskDepths_m(i) * tand((ds.hFOV_perPersonAvg/shape.plane.numPlanes)/2);
         maskHeights_m(i) = 2 * -maskDepths_m(i) * tand(ds.vFOV_perPersonAvg/2);
     end
     
-    for i = 1:shape.plane.numPlanes
+    
+    shape.mask.widths_m = maskWidths_m;
+    shape.mask.heights_m = maskHeights_m;
+
+    for i = 1:1 %shape.plane.numPlanes
+        blackTexData = zeros(maskTexHalfWidth*2, maskTexHalfHeight*2);%.*255;
+        blackTexData = repmat(blackTexData',[ 1 1 3 ]);
+        blackTexData = permute(uint8(blackTexData),[ 3 2 1 ]);
         for j = 1:shape.disk.numDisksPerPlane
-            opaque = min(opaque, sqrt(((x' + shape.disk.X_px{i}(j)).^2 + (y'+shape.disk.Y_px{i}(j)).^2))>apertureSize_px);
+            opaque = min(opaque, sqrt(((x + shape.disk.X_px{i}(j)).^2 + (y + shape.disk.Y_px{i}(j)).^2))>apertureSize_px);
         end
-        ithMaskVertices = [-maskWidths_m(i) -maskHeights_m(i) maskDepths_m(i);...
-                            maskWidths_m(i) -maskHeights_m(i) maskDepths_m(i);...
-                            maskWidths_m(i)  maskHeights_m(i) maskDepths_m(i);...
-                           -maskWidths_m(i)  maskHeights_m(i) maskDepths_m(i)]';
-        blckDat = blackTexData;
-        blckDat(4,:,:) = shiftdim(255 .* opaque', -1);
-        shape.mask.texture(i) = Texture(GL, type, maskTexWidth, maskTexHeight, blckDat);
+        ithMaskVertices = [-maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
+                            maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
+                            maskWidths_m(i)/2  maskHeights_m(i)/2 maskDepths_m(i);...
+                           -maskWidths_m(i)/2  maskHeights_m(i)/2 maskDepths_m(i)]';
+        
+        blackTexData(4,:,:) = shiftdim(255 .* opaque', -1);%
+        %keyboard
+        shape.mask.texture(i) = Texture(GL, type, 2*maskTexHalfWidth, 2*maskTexHalfHeight, uint8(blackTexData));
         shape.mask.listIds(i) = glGenLists(1);
         glNewList(shape.mask.listIds(i), GL.COMPILE);
             shape.mask.texture(i).bind
@@ -493,22 +502,23 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                                  %keyboard
                                  %glEnable(GL_DEPTH_TEST);
                        %}
-                         glEnable(GL.POINT_SPRITE);
-                                 for i=1:shape.plane.numPlanes
-                                    glPushMatrix;
+                                                             glPushMatrix;
                                     glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
                                     glCallList(shape.mask.listIds(1));
                                     glPopMatrix;
 
-                                    glPushMatrix;
-                                    glTranslatef(0.0, 0.0, 0.0);
-                                    glCallList(shape.mask.listIds(2));
-                                    glPopMatrix;
+%                                    glPushMatrix;
+%                                     glTranslatef(0.0, 0.0, 0.0);
+%                                     glCallList(shape.mask.listIds(2));
+%                                     glPopMatrix;
+% 
+%                                     glPushMatrix;
+%                                     glTranslatef(shape.plane.widths_m(3), 0.0, 0.0);
+%                                     glCallList(shape.mask.listIds(3));
+%                                     glPopMatrix;
+                         glEnable(GL.POINT_SPRITE);
+                                 for i=1:shape.plane.numPlanes
 
-                                    glPushMatrix;
-                                    glTranslatef(shape.plane.widths_m(3), 0.0, 0.0);
-                                    glCallList(shape.mask.listIds(3));
-                                    glPopMatrix;
                                     %DRAW DISKS
                                     glBindTexture(type, shape.disk.texture.id)
                                     moglDrawDots3D(ds.w, [posX{i}, posY{i}, shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
