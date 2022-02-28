@@ -206,7 +206,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
     opaque = ones(size(x));
     maskWidths_m  = zeros(1, shape.plane.numPlanes);
     maskHeights_m = zeros(1, shape.plane.numPlanes);
-    maskDepths_m  = shape.plane.depths_m; %+ .001;
+    maskDepths_m  = shape.plane.depths_m + .001;
     for i = 1:shape.plane.numPlanes
         maskWidths_m(i)  = 2 * -maskDepths_m(i) * tand((ds.hFOV_perPersonAvg/shape.plane.numPlanes)/2);
         maskHeights_m(i) = 2 * -maskDepths_m(i) * tand(ds.vFOV_perPersonAvg/2);
@@ -220,9 +220,9 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
         blackTexData = zeros(maskTexHalfWidth*2, maskTexHalfHeight*2);%.*255;
         blackTexData = repmat(blackTexData',[ 1 1 3 ]);
         blackTexData = permute(uint8(blackTexData),[ 3 2 1 ]);
-        %for j = 1:shape.disk.numDisksPerPlane
-            opaque = min(opaque, sqrt(((x + shape.disk.X_px{i}(1)).^2 + (y + shape.disk.Y_px{i}(1)).^2))>apertureSize_px);
-        %end
+        for j = 1:shape.disk.numDisksPerPlane
+            opaque = min(opaque, sqrt(((x + shape.disk.X_px{i}(j)).^2 + (y + shape.disk.Y_px{i}(j)).^2))>apertureSize_px);
+        end
         ithMaskVertices = [-maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
                             maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
                             maskWidths_m(i)/2  maskHeights_m(i)/2 maskDepths_m(i);...
@@ -502,11 +502,14 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                                  %keyboard
                                  %glEnable(GL_DEPTH_TEST);
                        %}
-                                     %                        glPushMatrix;
-                                    %glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
+                                    glPushMatrix;
+                                    glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
                                     glCallList(shape.mask.listIds(1));
-                                  %  glPopMatrix;
-
+                                    glPopMatrix;
+                                    
+                                    glPushMatrix;
+                                    glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
+                                    glCallList(shape.mask.listIds(1));
 %                                    glPushMatrix;
 %                                     glTranslatef(0.0, 0.0, 0.0);
 %                                     glCallList(shape.mask.listIds(2));
@@ -516,27 +519,27 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
 %                                     glTranslatef(shape.plane.widths_m(3), 0.0, 0.0);
 %                                     glCallList(shape.mask.listIds(3));
 %                                     glPopMatrix;
-%                          glEnable(GL.POINT_SPRITE);
-%                                  for i=1:shape.plane.numPlanes
+                         glEnable(GL.POINT_SPRITE);
+                                 for i=1:shape.plane.numPlanes
+
+                                    %DRAW DISKS
+                                    glBindTexture(type, shape.disk.texture.id)
+                                    moglDrawDots3D(ds.w, [posX{i}, posY{i}, shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
+                                    %moglDrawDots3D(ds.w, [shape.disk.X_m{i},shape.disk.Y_m{i},shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
+                                    glBindTexture(type, 0);
+                                    %plot3(posX{1}, posY{1},shape.disk.Z_m{1}, 'r.'); hold on;  plot3(posX{2}, posY{2}, shape.disk.Z_m{2}, 'b.'); hold on; plot3(posX{3}, posY{3}, shape.disk.Z_m{3 }, 'g.');
+                                    %plot3(shape.disk.X_m{1}, shape.disk.Y_m{1}, shape.disk.Z_m{1}, 'r.'); hold on;  plot3(shape.disk.X_m{2}, shape.disk.Y_m{2}, shape.disk.Z_m{2}, 'b.'); hold on; plot3(shape.disk.X_m{3}, shape.disk.Y_m{3}, shape.disk.Z_m{3}, 'g.');
+                                    %keyboard
+                                    %END DRAW DISKS
+                                     %APERTURES
+%                                     glBindTexture(type, shape.disk.texture.aptrId);
+%                                     
+%                                     moglDrawDots3D(ds.w, [shape.disk.X_m{i}, shape.disk.Y_m{i}, shape.disk.Z_m{i}+.01]', shape.disk.aptPlane_px, [], [], []);
 % 
-%                                     %DRAW DISKS
-%                                     glBindTexture(type, shape.disk.texture.id)
-%                                     moglDrawDots3D(ds.w, [posX{i}, posY{i}, shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
-%                                     %moglDrawDots3D(ds.w, [shape.disk.X_m{i},shape.disk.Y_m{i},shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
 %                                     glBindTexture(type, 0);
-%                                     %plot3(posX{1}, posY{1},shape.disk.Z_m{1}, 'r.'); hold on;  plot3(posX{2}, posY{2}, shape.disk.Z_m{2}, 'b.'); hold on; plot3(posX{3}, posY{3}, shape.disk.Z_m{3 }, 'g.');
-%                                     %plot3(shape.disk.X_m{1}, shape.disk.Y_m{1}, shape.disk.Z_m{1}, 'r.'); hold on;  plot3(shape.disk.X_m{2}, shape.disk.Y_m{2}, shape.disk.Z_m{2}, 'b.'); hold on; plot3(shape.disk.X_m{3}, shape.disk.Y_m{3}, shape.disk.Z_m{3}, 'g.');
-%                                     %keyboard
-%                                     %END DRAW DISKS
-%                                      %APERTURES
-% %                                     glBindTexture(type, shape.disk.texture.aptrId);
-% %                                     
-% %                                     moglDrawDots3D(ds.w, [shape.disk.X_m{i}, shape.disk.Y_m{i}, shape.disk.Z_m{i}+.01]', shape.disk.aptPlane_px, [], [], []);
-% % 
-% %                                     glBindTexture(type, 0);
-%                                      %END APERTURES
-%                                  end
-%                                  glDisable(GL.POINT_SPRITE);
+                                     %END APERTURES
+                                 end
+                                 glDisable(GL.POINT_SPRITE);
                                  %glBindTexture(GL.TEXTURE_2D, 0);
                                 %
                                 %glBindTexture(GL.TEXTURE_2D, 0)

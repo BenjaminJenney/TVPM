@@ -47,18 +47,18 @@ function shape = SetupShapes(ds, pa)
                            -widths_m(i)/2  heights_m(i)/2 depths_m(i) ]';
         shape.plane.vertices{i} = ithPlaneVertices;
         %ds.initPositions{i} = opticFlow(shape.plane.widths_m(i), shape.plane.heights_m(i), shape.plane.depths_m(i), 50);
-%         shape.plane.listIds(i) = glGenLists(1);
-% 
-%         glNewList(shape.plane.listIds(i), GL.COMPILE);
-%             shape.plane.texture.bind;
-%             glBegin(GL.POLYGON);
-%             for j = 1:numVertices
-%                 glTexCoord2dv(corners(j,:));
-%                 glVertex3dv(ithPlaneVertices(:,j));
-%             end
-%             glEnd;
-%             shape.plane.texture.unbind;
-%         glEndList(); 
+        shape.plane.listIds(i) = glGenLists(1);
+
+        glNewList(shape.plane.listIds(i), GL.COMPILE);
+            shape.plane.texture.bind;
+            glBegin(GL.POLYGON);
+            for j = 1:numVertices
+                glTexCoord2dv(corners(j,:));
+                glVertex3dv(ithPlaneVertices(:,j));
+            end
+            glEnd;
+            shape.plane.texture.unbind;
+        glEndList(); 
     end
     
     shape.plane.depths_m  = depths_m;

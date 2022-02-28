@@ -216,7 +216,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
     shape.mask.widths_m = maskWidths_m;
     shape.mask.heights_m = maskHeights_m;
 
-    for i = 1:1 %shape.plane.numPlanes
+    for i = 1:shape.plane.numPlanes
         blackTexData = zeros(maskTexHalfWidth*2, maskTexHalfHeight*2);%.*255;
         blackTexData = repmat(blackTexData',[ 1 1 3 ]);
         blackTexData = permute(uint8(blackTexData),[ 3 2 1 ]);
@@ -244,11 +244,13 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
        glEndList();
     end
     Screen('EndOpenGL', ds.w);
-    [vXw, vYw, shape] = Preprocess(ds, pa, shape, GL);% m/f in world coords
+    if planes == 1 && mask == 0
+        [vXw, vYw, shape] = Preprocess(ds, pa, shape, GL);% m/f in world coords
+    end
     while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
         ds.fCount = ds.fCount + 1; % frame count
-        if ds.vbl <  pa.trialOnset + pa.targetMotionDuration % if still presenting stim
-            if ds.fCount == 1
+        if ds.vbl <  pa.trialOnset + pa.targetMotionDuration && mask == 0 % if still presenting stim
+            if ds.fCount == 1 
                 clear posX; clear posY;
                 for i = 1:shape.plane.numPlanes
                     posX{i} = shape.disk.X_m{i};
@@ -258,11 +260,11 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 end
                 
             else
-                for i = 1:shape.plane.numPlanes
-                    posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
-                    posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
-                    
-                end
+%                 for i = 1:shape.plane.numPlanes
+%                     posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
+%                     posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
+%                     
+%                 end
                 %ds.fCount
             end
         end
@@ -464,7 +466,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         moglDrawDots3D(ds.w, [0 0  shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
                         glPopMatrix;
                         
-                     elseif planes == 1
+                     elseif planes == 1 && mask == 0
                         %{
                         %                            glPushMatrix;
                         %
@@ -502,20 +504,11 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                                  %keyboard
                                  %glEnable(GL_DEPTH_TEST);
                        %}
-                                                             glPushMatrix;
-                                    glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
-                                    glCallList(shape.mask.listIds(1));
-                                    glPopMatrix;
+%                          glPushMatrix;
+%                                     glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
+%                                     glCallList(shape.plane.listIds(1));
+%                                     glPopMatrix;
 
-%                                    glPushMatrix;
-%                                     glTranslatef(0.0, 0.0, 0.0);
-%                                     glCallList(shape.mask.listIds(2));
-%                                     glPopMatrix;
-% 
-%                                     glPushMatrix;
-%                                     glTranslatef(shape.plane.widths_m(3), 0.0, 0.0);
-%                                     glCallList(shape.mask.listIds(3));
-%                                     glPopMatrix;
                          glEnable(GL.POINT_SPRITE);
                                  for i=1:shape.plane.numPlanes
 
@@ -537,6 +530,21 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                                      %END APERTURES
                                  end
                                  glDisable(GL.POINT_SPRITE);
+                                                                     glPushMatrix;
+                                    glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
+                                    glCallList(shape.plane.listIds(1));
+                                    glPopMatrix;
+                                    
+                                    
+                                    glPushMatrix;
+                                    glTranslatef(0.0, 0.0, 0.0);
+                                    glCallList(shape.plane.listIds(2));
+                                    glPopMatrix;
+
+                                    glPushMatrix;
+                                    glTranslatef(shape.plane.widths_m(3), 0.0, 0.0);
+                                    glCallList(shape.plane.listIds(3));
+                                    glPopMatrix;
                                  %glBindTexture(GL.TEXTURE_2D, 0);
                                 %
                                 %glBindTexture(GL.TEXTURE_2D, 0)
