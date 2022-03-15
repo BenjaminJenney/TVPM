@@ -157,12 +157,11 @@ function shape = SetupShapes(ds, pa)
     [xm, ym] = meshgrid(-(s2/2)+1:s2/2, -(s1/2)+1:s1/2);
     %ym   = randi([-s2/2, s2/2], s2/2, s2/2);
     %gauss = exp(-(((xm .^2) + (ym .^2)) ./ (2 * gaussSigma^2)));
-
     f = abs(cos(1/15.*[-s2/2:s2/2])).^8; f2 = f'*f;
      gauss = f2(1:s1,1:s2);
     fixationHole_px = 15 ;
     gauss = 1-gauss;
-    shape.mask.gauss = min((gauss), sqrt((xm).^2 + (ym).^2)>fixationHole_px);
+    gauss = min((gauss), sqrt((xm).^2 + (ym).^2)>fixationHole_px);
     
     bag = ones(screenYpixels, screenXpixels) .* black;
     bag = repmat(bag,[ 1 1 3 ]);
@@ -171,9 +170,9 @@ function shape = SetupShapes(ds, pa)
     mask = ones(s1, s2, 1);
     mask(:, :, 2) = gauss; % Original Raised cosine calculation
     mask(:,:,2) = round(mask(:,:,2),3,'significant');
-    endCols = mask(:,end-round(d_px/2)+1:end,2);
+    endCols = mask(:,round(d_px/2)+1:end,2);
     mask(:,:,2) = 1;
-    mask(:,1:round(d_px/2),2) = endCols;
+    mask(:,1:end - round(d_px/2),2) = endCols;
     bag(:,:,4) = circshift(mask(:,:,2)', 50);
     shape.mask.fullWindowMaskLeftEye = Screen('MakeTexture', ds.w, bag);
     
@@ -203,7 +202,8 @@ function shape = SetupShapes(ds, pa)
     yg = yg .* spacing + screenYpixels / 2; % hole y position%
     xg = reshape(xg, 1, numel(xg));
     yg = reshape(yg, 1, numel(yg));
-
+    
+    shape.mask.gauss = gauss;
 
     % Make the destination rectangles for the gaussian apertures
     shape.dstRects = nan(4, numel(xg));
