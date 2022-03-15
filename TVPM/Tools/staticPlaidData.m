@@ -1,9 +1,9 @@
-function plaidData = staticPlaidData(ds, x, y)
+function plaidData = staticPlaidData(ds, sf, x, y)
     white = 1.0;
     grey  = white/2;
     inc   = white - grey;
     
-    sf = 2; % cycles per deg .1 * (the ratio between the largest dimension of disk texture and the largest dimension of the plane texture)
+    %sf = 2; % cycles per deg .1 * (the ratio between the largest dimension of disk texture and the largest dimension of the plane texture)
     sf = (ds.deg_per_px).*sf; %1/px_per_deg %convert from deg to 
     af = 2*pi*sf;
     

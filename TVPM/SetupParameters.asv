@@ -154,9 +154,7 @@ pa.heading = NaN(pa.nTrials,1);
 
 pa.quitFlag = 0; % don't give up
 
-%% Params for TVPM-FULL and TVPM-PLANES+MASK
-pa.sf = 2;
-pa.apertureDia_px = 20;
+%% Params for TVPM-FULL and 
 
 
 %% textures

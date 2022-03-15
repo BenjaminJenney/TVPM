@@ -14,19 +14,20 @@ function shape = SetupShapes(ds, pa)
 
     [x,y] = meshgrid(-xHalfTextureSize+1:xHalfTextureSize,-yHalfTextureSize+1:yHalfTextureSize);
 
-    opaque = ones(size(x));
+    midPlaneAlpha = ones(size(x));
     
-    % All three plaid textures for the planes are the same except the
-    % midPlane needs a hole in its alpha chanel (alpha chanel = 4th index)
-    shape.plane.textureData  = staticPlaidData(ds, x, y);
-    midPlaneAlpha = min(opaque, sqrt(x.^2 + y.^2) > 20);%Cut out hole for fixation dot
+    % All three plaid are painted with the same texture data
+    % (staticPliadData),
+    % except midPlane needs a hole in its alpha chanel (alpha chanel = 4th index)
+    fixationDotSize_px = 15;
+    shape.plane.textureData  = staticPlaidData(ds, pa.sf, x, y);
+    midPlaneAlpha = min(midPlaneAlpha, sqrt(x.^2 + y.^2) > fixationDotSize_px);%Cut out hole for fixation dot
     midPlaneTexData = shape.plane.textureData;
-    midPlaneTexData(4,:,:) = midPlaneAlpha;
-    shape.Plane.textureData(4,:,:) = opaque;
-    midPlaneTexture = Texture(GL, GL_TEXTURE_2D, xHalfTextureSize*2, yHalfTextureSize*2, midPlaneTexData);
+    midPlaneTexData(4,:,:) = shiftdim(255 .* midPlaneAlpha', -1);
+    midPlaneTexture = Texture(GL, GL_TEXTURE_2D, xHalfTextureSize*2, yHalfTextureSize*2, uint8(midPlaneTexData));
 
-    nearPlaneTexture = Texture(GL, GL_TEXTURE_2D, xHalfTextureSize*2, yHalfTextureSize*2, shape.plane.textureData);
-    farPlaneTexture  = Texture(GL, GL_TEXTURE_2D, xHalfTextureSize*2, yHalfTextureSize*2, shape.plane.textureData);
+    nearPlaneTexture = Texture(GL, GL_TEXTURE_2D, xHalfTextureSize*2, yHalfTextureSize*2, uint8(shape.plane.textureData));
+    farPlaneTexture  = Texture(GL, GL_TEXTURE_2D, xHalfTextureSize*2, yHalfTextureSize*2, uint8(shape.plane.textureData));
     shape.plane.textures = [nearPlaneTexture, midPlaneTexture, farPlaneTexture];
     % End texture for the three planes
 
@@ -117,7 +118,7 @@ function shape = SetupShapes(ds, pa)
     shape.disk.numDisks = shape.disk.numDisksPerPlane * shape.plane.numPlanes;
     shape.disk = diskPos(ds, shape.disk, shape.plane);
     
-    sf        = 2; %.1; % cycles per deg
+    sf        = pa.sf; %.1; % cycles per deg
     sf        = (ds.deg_per_px).*sf; %1/px_per_deg %convert from deg to 
     af        = 2*pi*sf;
     xGrating  = (.5 + .5 * sin(af * shape.disk.texture.x - 0)); % vertically oriented grating
@@ -135,8 +136,80 @@ function shape = SetupShapes(ds, pa)
         glTexImage2D(type, 0, GL.RGB, shape.disk.texture.width, shape.disk.texture.width, 0, GL.RGB, GL.UNSIGNED_BYTE, uint8(plaidData));
         glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
     glBindTexture(type,0);
+   Screen('EndOpenGL', ds.w);
+   
     %% Masks
+    b = .067; % inter-pupillary distance in meters TODO: Figure out if there is a way to get IP from the headset instead of hardcoding.
+    Z = shape.plane.depths_m(2); % depth of middle plane.
+    d_deg = 2.*( atand((b./2)./(2.*Z)) - atand((-b./2)./(2.*Z)) ); % Should fix disparity of the mask.
+    d_px  = abs(d_deg*ds.px_per_deg);
+
+    % Get the size of the on screen window
+    [screenXpixels, screenYpixels] = Screen('WindowSize', ds.w);
+    white = WhiteIndex(0);
+    black = BlackIndex(0);
+
+    % Make a gaussian aperture with the "alpha" channel
+    gaussDim = pa.apertureDia_px; %100 px? TODO: DOES NOT SEEM TO CHANGE SIZE. 
+    gaussSigma = pa.apertureDia_px; %gaussDim /4; % csb: controls how big the apertures are
+    s1 = screenXpixels;
+    s2 = screenYpixels;
+    [xm, ym] = meshgrid(-(s2/2)+1:s2/2, -(s1/2)+1:s1/2);
+    %ym   = randi([-s2/2, s2/2], s2/2, s2/2);
+    %gauss = exp(-(((xm .^2) + (ym .^2)) ./ (2 * gaussSigma^2)));
+
+    f = abs(cos(1/15.*[-s2/2:s2/2])).^8; f2 = f'*f;
+     gauss = f2(1:s1,1:s2);
+    fixationHole_px = 15 ;
+    gauss = 1-gauss;
+    shape.mask.gauss = min((gauss), sqrt((xm).^2 + (ym).^2)>fixationHole_px);
     
+    bag = ones(screenYpixels, screenXpixels) .* black;
+    bag = repmat(bag,[ 1 1 3 ]);
+    
+    % LEFT EYE
+    mask = ones(s1, s2, 1);
+    mask(:, :, 2) = gauss; % Original Raised cosine calculation
+    mask(:,:,2) = round(mask(:,:,2),3,'significant');
+    endCols = mask(:,end-round(d_px/2)+1:end,2);
+    mask(:,:,2) = 1;
+    mask(:,1:round(d_px/2),2) = endCols;
+    bag(:,:,4) = circshift(mask(:,:,2)', 50);
+    shape.mask.fullWindowMaskLeftEye = Screen('MakeTexture', ds.w, bag);
+    
+    %RIGHT EYE
+    mask(:, :, 2) = gauss; % restart Alpha with original raised cosine calc.
+    frontCols = mask(:,1:end-round(d_px/2),2); % Take the columns up to end-disparity shift)
+    mask(:,:,2) = 1; % reset Alpha to completely opaque
+    mask(:,round(d_px/2):end,2) = frontCols; % paste to the end of the Alpha chanel
+    bag(:,:,4) = circshift(mask(:,:,2)', 50);
+    shape.mask.fullWindowMaskRightEye = Screen('MakeTexture', ds.w, bag);
+
+    %ds.masktex = Screen('MakeTexture', ds.w, mask);
+
+    %black = ones(screenYpixels, screenXpixels) .* black;
+    %black(:, : 4) = mask;
+     
+    %bag = permute(bag,[ 3 2 1 ]);
+    
+    %bag(628:668,:,4) = -1;
+    % Make a grey texture to cover the full window
+    %shape.mask.fullWindowMask = Screen('MakeTexture', ds.w, bag);
+
+    % Make coordinates in which to draw the apertures into our full screen mask
+    [xg, yg] = meshgrid(-gaussDim:gaussDim, -gaussDim:gaussDim); % csb: and this controls how many apertures there are
+    spacing = gaussDim * 2; % csb: i think this controls how far apart the apertures ares
+    xg = xg .* spacing + screenXpixels / 2;
+    yg = yg .* spacing + screenYpixels / 2; % hole y position%
+    xg = reshape(xg, 1, numel(xg));
+    yg = reshape(yg, 1, numel(yg));
+
+
+    % Make the destination rectangles for the gaussian apertures
+    shape.dstRects = nan(4, numel(xg));
+    for i = 1:numel(xg)
+    shape.dstRects(:, i) = CenterRectOnPointd([0 0 s1, s2], xg(i), yg(i));
+    end
     
     % APERTURES:
     %{
@@ -163,5 +236,5 @@ function shape = SetupShapes(ds, pa)
     %}
     shape.disk.texture.id     = textureid;
     %shape.disk.texture.aptrId = textureid(2);
-    Screen('EndOpenGL', ds.w);
+    
 end

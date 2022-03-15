@@ -593,12 +593,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
 
                        % glDisable(GL_ALPHA_TEST);
                         if mask == 1
-                            if renderPass == 0
-                                drawTheHoleyBag(shape.mask.fullWindowMaskLeftEye, ds, 1);
-                            end
-                            if renderPass == 1
-                                drawTheHoleyBag(shape.mask.fullWindowMaskRightEye, ds, 1);
-                            end
+                            drawTheHoleyBag(shape, ds, 1);
                         end
                         
                     end
