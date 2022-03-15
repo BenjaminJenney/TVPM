@@ -3,7 +3,7 @@ function plaidData = staticPlaidData(ds, x, y)
     grey  = white/2;
     inc   = white - grey;
     
-    sf =.1; % cycles per deg .1 * (the ratio between the largest dimension of disk texture and the largest dimension of the plane texture)
+    sf = 2; % cycles per deg .1 * (the ratio between the largest dimension of disk texture and the largest dimension of the plane texture)
     sf = (ds.deg_per_px).*sf; %1/px_per_deg %convert from deg to 
     af = 2*pi*sf;
     
@@ -13,9 +13,6 @@ function plaidData = staticPlaidData(ds, x, y)
     plaidData = repmat(plaidData,[ 1 1 3 ]);
     plaidData = permute(uint8(plaidData),[ 3 2 1 ]);
     plaidData(4,:,:) = 255;
-        
-    plaidData(4,:,628:668) = 0;
-    
     %{
     figure; imagesc(255.*((xGrating + yGrating)/2))
     axis equal

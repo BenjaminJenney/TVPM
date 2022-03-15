@@ -283,30 +283,34 @@ black = BlackIndex(0);
 Screen('BlendFunction', ds.w, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 
 % Make a gaussian aperture with the "alpha" channel
-gaussDim = 200; % px?
-gaussSigma = gaussDim /8; % csb: controls how big the apertures are
+gaussDim = 100; % px?
+gaussSigma = gaussDim /4; % csb: controls how big the apertures are
 s1 = screenXpixels;
 s2 = screenYpixels;
-[xm, ym] = meshgrid(-s2/2+1:s2/2, -s1/2+1:s1/2);
-ym   = randi([-s2/2, s2/2], s2/2, s2/2);
+[xm, ym] = meshgrid(-(s2/2)+1:s2/2, -(s1/2)+1:s1/2);
+%ym   = randi([-s2/2, s2/2], s2/2, s2/2);
 %gauss = exp(-(((xm .^2) + (ym .^2)) ./ (2 * gaussSigma^2)));
 
 f = abs(cos(1/15.*[-s2/2:s2/2])).^8; f2 = f'*f;
 gauss = f2(1:s1,1:s2);
- 
+fixationHole_px =15 ;
+gauss = 1-gauss;
+gauss = min((gauss), sqrt((xm).^2 + (ym).^2)>fixationHole_px);
+
 mask = ones(s1, s2, 1);
-mask(:, :, 2) = white * (1 - gauss);
+mask(:, :, 2) = gauss;
 mask(:,:,2) = round(mask(:,:,2),3,'significant');
+
 
 %ds.masktex = Screen('MakeTexture', ds.w, mask);
 
 %black = ones(screenYpixels, screenXpixels) .* black;
 %black(:, : 4) = mask;
-    bag = ones(screenYpixels, screenXpixels) .* black; %BJ: how does multiplying by 255(white right?) make the image grayscale?
+     bag = ones(screenYpixels, screenXpixels) .* black; %BJ: how does multiplying by 255(white right?) make the image grayscale?
     bag = repmat(bag,[ 1 1 3 ]);
     %bag = permute(bag,[ 3 2 1 ]);
     bag(:,:,4) = circshift(mask(:,:,2)', 50);
-    bag(628:668,:,4) = -1;
+    %bag(628:668,:,4) = -1;
 % Make a grey texture to cover the full window
 ds.fullWindowMask = Screen('MakeTexture', ds.w, bag);
 

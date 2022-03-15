@@ -14,20 +14,19 @@ function shape = SetupShapes(ds, pa)
 
     [x,y] = meshgrid(-xHalfTextureSize+1:xHalfTextureSize,-yHalfTextureSize+1:yHalfTextureSize);
 
-    midPlaneAlpha = ones(size(x));
+    opaque = ones(size(x));
     
-    % All three plaid are painted with the same texture data
-    % (staticPliadData),
-    % except midPlane needs a hole in its alpha chanel (alpha chanel = 4th index)
-    fixationDotSize_px = 15;
+    % All three plaid textures for the planes are the same except the
+    % midPlane needs a hole in its alpha chanel (alpha chanel = 4th index)
     shape.plane.textureData  = staticPlaidData(ds, x, y);
-    midPlaneAlpha = min(midPlaneAlpha, sqrt(x.^2 + y.^2) > fixationDotSize_px);%Cut out hole for fixation dot
+    midPlaneAlpha = min(opaque, sqrt(x.^2 + y.^2) > 20);%Cut out hole for fixation dot
     midPlaneTexData = shape.plane.textureData;
-    midPlaneTexData(4,:,:) = shiftdim(255 .* midPlaneAlpha', -1);
-    midPlaneTexture = Texture(GL, GL_TEXTURE_2D, xHalfTextureSize*2, yHalfTextureSize*2, uint8(midPlaneTexData));
+    midPlaneTexData(4,:,:) = midPlaneAlpha;
+    shape.Plane.textureData(4,:,:) = opaque;
+    midPlaneTexture = Texture(GL, GL_TEXTURE_2D, xHalfTextureSize*2, yHalfTextureSize*2, midPlaneTexData);
 
-    nearPlaneTexture = Texture(GL, GL_TEXTURE_2D, xHalfTextureSize*2, yHalfTextureSize*2, uint8(shape.plane.textureData));
-    farPlaneTexture  = Texture(GL, GL_TEXTURE_2D, xHalfTextureSize*2, yHalfTextureSize*2, uint8(shape.plane.textureData));
+    nearPlaneTexture = Texture(GL, GL_TEXTURE_2D, xHalfTextureSize*2, yHalfTextureSize*2, shape.plane.textureData);
+    farPlaneTexture  = Texture(GL, GL_TEXTURE_2D, xHalfTextureSize*2, yHalfTextureSize*2, shape.plane.textureData);
     shape.plane.textures = [nearPlaneTexture, midPlaneTexture, farPlaneTexture];
     % End texture for the three planes
 

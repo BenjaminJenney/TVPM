@@ -221,7 +221,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
         blackTexData = repmat(blackTexData',[ 1 1 3 ]);
         blackTexData = permute(uint8(blackTexData),[ 3 2 1 ]);
         for j = 1:shape.disk.numDisksPerPlane
-            opaque = min(opaque, sqrt(((x + shape.disk.X_px{i}(j)).^2 + (y + shape.disk.Y_px{i}(j)).^2))>apertureSize_px);
+            opaque = min(opaque, sqrt((x + shape.disk.X_px{i}(j)).^2 + (y + shape.disk.Y_px{i}(j)).^2)>apertureSize_px);
         end
         ithMaskVertices = [-maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
                             maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
@@ -530,7 +530,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                                      %END APERTURES
                                  end
                                  glDisable(GL.POINT_SPRITE);
-                                                                     glPushMatrix;
+                                    glPushMatrix;
                                     glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
                                     glCallList(shape.plane.listIds(1));
                                     glPopMatrix;
@@ -569,6 +569,28 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         %                           glPopMatrix;
                         
                         %if mask == 1, drawTheHoleyBag(ds, 1), end
+                    elseif planes == 1 && mask == 1
+                        moglDrawDots3D(ds.w, [0 0  shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2);
+                       % glAlphaFunc(GL_GREATER, 0.5); %diskards px fragments below .5 alpha value
+                        %glEnable(GL_ALPHA_TEST);      %This way we can see the post without render ordering problems
+                        moglDrawDots3D(ds.w, [0 0  shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2);
+                        glPushMatrix;
+                        glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
+                        glCallList(shape.plane.listIds(1));
+                        glPopMatrix;
+
+                        glPushMatrix;
+                        glTranslatef(0.0, 0.0, 0.0);
+                        glCallList(shape.plane.listIds(2));
+                        glPopMatrix;
+
+                        glPushMatrix;
+                        glTranslatef(shape.plane.widths_m(3), 0.0, 0.0);
+                        glCallList(shape.plane.listIds(3));
+                        glPopMatrix;
+
+                       % glDisable(GL_ALPHA_TEST);
+                        if mask == 1, drawTheHoleyBag(ds, 1), end
                         
                     end
                     %if ds.simulated % added csb july 3 2021. for plotting original fixation pt, for debugging. the two fixation pts should be in the same retinal location
@@ -593,26 +615,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         moglDrawDots3D(ds.w, [0 0 shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
                     elseif planes == 1 && mask == 1
 
-                        glAlphaFunc(GL_GREATER, 0.5); %diskards px fragments below .5 alpha value
-                        glEnable(GL_ALPHA_TEST);      %This way we can see the post without render ordering problems
 
-                        glPushMatrix;
-                        glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
-                        glCallList(shape.plane.listIds(1));
-                        glPopMatrix;
-
-                        glPushMatrix;
-                        glTranslatef(0.0, 0.0, 0.0);
-                        glCallList(shape.plane.listIds(2));
-                        glPopMatrix;
-
-                        glPushMatrix;
-                        glTranslatef(shape.plane.widths_m(3), 0.0, 0.0);
-                        glCallList(shape.plane.listIds(3));
-                        glPopMatrix;
-
-                        glDisable(GL_ALPHA_TEST);
-                        if mask == 1, drawTheHoleyBag(ds, 1), end
                     end
                     
                     
