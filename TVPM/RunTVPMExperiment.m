@@ -241,6 +241,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
             glEnd;
             shape.mask.texture(i).unbind;
        glEndList();
+       opaque = ones(size(x));
     end
     Screen('EndOpenGL', ds.w);
     if planes == 1 && mask == 0

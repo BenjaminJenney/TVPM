@@ -37,10 +37,11 @@ function disk = diskPos(ds, disk, plane)
         
         disk.xpos_deg{i} = xpos_deg;
         disk.ypos_deg{i} = ypos_deg;
-        disk.X_px{i}  = xpos_deg .* ds.px_per_deg; %(disk.xpos_deg{i} + (2-i)*hFOV/3) .* ds.px_per_deg; % convert to coordinate system of each individual plane in pixels, by going to center of each plane
+        disk.X_px{i}  = (-1).*((disk.xpos_deg{i} + (2-i)*hFOV/3) .* ds.px_per_deg); % convert to coordinate system of each individual plane in pixels, by going to center of each plane
         disk.Y_px{i}  = ypos_deg .* ds.px_per_deg;
+        disk.Xpx_m = (-1).*(2 .* Z(i).* tand((disk.xpos_deg{i} + (2-i)*hFOV/3)./2));
         
-        disk.X_m{i}  = (-1).*(2 .* Z(i).* tand(xpos_deg./2)); %ATTN(to CB): Subtract depth, since depth is negative? not sure this is right.
+        disk.X_m{i}  = (-1).*(2 .* Z(i).* tand(xpos_deg./2)); %ATTN(to CB): -depth * -angle was why the plaids were 'flipped'
         disk.Y_m{i}  = 2 .* Z(i).* tand(ypos_deg./2);
         disk.Z_m{i}  = ones(ndp,1).*Z(i);%disk.Z_m{i} = ones(180,1).*Z(i);
 % uncomment next 4 lines are for testing.
