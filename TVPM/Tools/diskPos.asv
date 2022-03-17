@@ -14,7 +14,6 @@ function disk = diskPos(ds, disk, plane)
     a_ = -vFOV/2;
     b_ = vFOV/2; % y range = [a_, b_]
     m_per_px = 0.0002645833; %m/px
-    px_per_m = 1/m_per_px; %px/m
     disk.xpos_deg = {};
     disk.ypos_deg = {};
     disk.X_m = {};
@@ -29,24 +28,27 @@ function disk = diskPos(ds, disk, plane)
        % yPlaneHeight_deg = vFOV - vFOV/2; %BJ: In GetRandomPoints the y parameter is named YWidth--I do not know why.
         
         %R_deg = sqrt(disk.aptPlane_deg^2 + disk.aptPlane_deg^2);
+        
+        
         xpos_deg = (b - a).* rand(ndp,1) + a + T(i); % rand range formula + offset of the plane (so the planes don't overlap)
-        ypos_deg = (b - a).* rand(ndp,1) + a;
+        ypos_deg = (b_ - a_).* rand(ndp,1) + a_;
+        
         %[xpos_deg, ypos_deg] = GetPointsRandom(ndp, xPlaneWidth_deg, yPlaneWidth_deg, R_deg);
+        
         disk.xpos_deg{i} = xpos_deg;
         disk.ypos_deg{i} = ypos_deg;
-        disk.X_px{i}  = ((disk.xpos_deg{i} + (2-i)*hFOV/3) .* ds.px_per_deg); % convert to coordinate system of each individual plane in pixels, by going to center of each plane
+        disk.X_px{i}  = (disk.xpos_deg{i} + (2-i)*hFOV/3) .* ds.px_per_deg); % convert to coordinate system of each individual plane in pixels, by going to center of each plane
         disk.Y_px{i}  = disk.ypos_deg{i} .* ds.px_per_deg;
         
-        disk.X_m{i}  = 2 .* Z(i).* tand(xpos_deg./2);
+        disk.X_m{i}  = (-1).*(2 .* Z(i).* tand(xpos_deg./2)); %ATTN(to CB): Subtract depth, since depth is negative? not sure this is right.
         disk.Y_m{i}  = 2 .* Z(i).* tand(ypos_deg./2);
         disk.Z_m{i}  = ones(ndp,1).*Z(i);%disk.Z_m{i} = ones(180,1).*Z(i);
-        %disk.X_px{i} = disk.X_m{i} .* px_per_m;
-        %disk.Y_px{i} = disk.Y_m{i} .* px_per_m;
-        %disk.apertureZ_m{i} = disk.Z_m{i} + .001; %place aperture .001 meters in front of each disk.
-        %keyboard
+% uncomment next 4 lines are for testing.
+%          axis equal
+%          plot3(plane.vertices{i}(1,:),plane.vertices{i}(2,:),plane.vertices{i}(3,:),'*')
+%          hold on; plot3(disk.X_m{i}, disk.Y_m{i}, disk.Z_m{i},'o')
+%          shg
     end
 %     disk.diskPos_m = [cat(1, disk.X_m{:}), cat(1,disk.Y_m{:}), cat(1, disk.Z_m{:})];
-%     plot3(shape.plane.vertices{1}(1,:),shape.plane.vertices{1}(2,:),shape.plane.vertices{3}(3,:),'*')
-% hold on; plot3(shape.disk.X_m{3}, shape.disk.Y_m{3}, shape.disk.Z_m{3},'o')
-% shg
+
  end

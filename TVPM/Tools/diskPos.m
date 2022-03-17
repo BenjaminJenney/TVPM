@@ -37,20 +37,17 @@ function disk = diskPos(ds, disk, plane)
         
         disk.xpos_deg{i} = xpos_deg;
         disk.ypos_deg{i} = ypos_deg;
-        disk.X_px{i}  = ((disk.xpos_deg{i} + (2-i)*hFOV/3) .* ds.px_per_deg); % convert to coordinate system of each individual plane in pixels, by going to center of each plane
-        disk.Y_px{i}  = disk.ypos_deg{i} .* ds.px_per_deg;
+        disk.X_px{i}  = xpos_deg .* ds.px_per_deg; %(disk.xpos_deg{i} + (2-i)*hFOV/3) .* ds.px_per_deg; % convert to coordinate system of each individual plane in pixels, by going to center of each plane
+        disk.Y_px{i}  = ypos_deg .* ds.px_per_deg;
         
-        disk.X_m{i}  = 2 .* Z(i).* tand(xpos_deg./2); %ATTN(to CB): Subtract depth, since depth is negative? not sure this is right.
+        disk.X_m{i}  = (-1).*(2 .* Z(i).* tand(xpos_deg./2)); %ATTN(to CB): Subtract depth, since depth is negative? not sure this is right.
         disk.Y_m{i}  = 2 .* Z(i).* tand(ypos_deg./2);
         disk.Z_m{i}  = ones(ndp,1).*Z(i);%disk.Z_m{i} = ones(180,1).*Z(i);
-         axis equal
-         plot3(plane.vertices{i}(1,:),plane.vertices{i}(2,:),plane.vertices{i}(3,:),'*')
-         hold on; plot3(disk.X_m{i}, disk.Y_m{i}, disk.Z_m{i},'o')
-         shg
-        %disk.X_px{i} = disk.X_m{i} .* px_per_m;
-        %disk.Y_px{i} = disk.Y_m{i} .* px_per_m;
-        %disk.apertureZ_m{i} = disk.Z_m{i} + .001; %place aperture .001 meters in front of each disk.
-        %keyboard
+% uncomment next 4 lines are for testing.
+%          axis equal
+%          plot3(plane.vertices{i}(1,:),plane.vertices{i}(2,:),plane.vertices{i}(3,:),'*')
+%          hold on; plot3(disk.X_m{i}, disk.Y_m{i}, disk.Z_m{i},'o')
+%          shg
     end
 %     disk.diskPos_m = [cat(1, disk.X_m{:}), cat(1,disk.Y_m{:}), cat(1, disk.Z_m{:})];
 

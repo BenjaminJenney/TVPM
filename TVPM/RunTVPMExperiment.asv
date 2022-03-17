@@ -356,7 +356,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 glClear(); % clear the buffers - must be done for every frame
                 glColor3f(1,1,1);
                 
-                %glPushMatrix;
+                glPushMatrix;
                 %% Experiment Logic
                 if ds.vbl <  pa.trialOnset + pa.targetMotionDuration % if current time < present until time: draw target, 1 s target motion
                     
@@ -466,47 +466,6 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         glPopMatrix;
                         %%TVPM FULL
                      elseif planes == 1 && mask == 0
-                        %{
-                        %                            glPushMatrix;
-                        %
-                        %                            glLoadIdentity;
-                        %                            preMV = glGetFloatv(GL.MODELVIEW_MATRIX);
-                        %                            preMV = reshape(preMV, [4,4]);
-                        %                            gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-pa.cubeWidth/4,0,1,0);
-                        %                            %glTranslatef(-ds.planeWidths_m(2) + xDotDisplacement, 0.0, 0.0 + zDotDisplacement);
-                        %                            curMV = glGetFloatv(GL.MODELVIEW_MATRIX);
-                        %
-                        %                            curMV = reshape(curMV, [4,4]);
-                        %
-                        %     t = t+1;
-                        %                          for i = 1:ds.numFrames
-                        
-                        %                            if t == 2; keyboard;end
-                        %                           for i = 1:shape.plane.numPlanes
-                        %                             opticFlow(ds, pa, shape.disk.xpos_deg(:,:,i), shape.disk.ypos_deg(:,:,i), shape.plane.planes(i), 1050, curMV, t, omegaY, T);
-                        %                           end
-                        %                           glPopMatrix;
-                        %keyboard;
-                       % tic
-                      % if pa.frame <= pa.nFrames % not necessary bc we are running under the frame rate of monitor, but whatever.
-                       % glEnable(GL.POINT_SPRITE);
-%                        for i = 1:shape.plane.numPlanes                
-%                            for j = 1:shape.disk.numDisks
-%                                 vCurPhase = vPhaseChange(pa.trialNumber,pa.frame,renderPass+1,i,j); if vCurPhase == 0; vCurPhase = 1; end
-%                                 hCurPhase = hPhaseChange(pa.trialNumber,pa.frame,renderPass+1,i,j); if hCurPhase == 0; hCurPhase = 1; end
-%                                 image = .5.*hGratings{vCurPhase} + .5.*hGratings{hCurPhase}';
-%                                 image = 255.*(image./2);
-%                                 image = repmat(image,[ 1 1 3 ]);
-%                                 image = permute(image,[ 3 2 1 ]);
-%                                glBindTexture(GL_TEXTURE_2D, diskTexture.id)
-%                                glTexSubImage2D(GL_TEXTURE_2D, 0,0,0, diskTexture.width, diskTexture.height, GL_RGB, GL_UNSIGNED_BYTE, uint8(image));
-                                 %keyboard
-                                 %glEnable(GL_DEPTH_TEST);
-                       %}
-%                          glPushMatrix;
-%                                     glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
-%                                     glCallList(shape.plane.listIds(1));
-%                                     glPopMatrix;
 
                          glEnable(GL.POINT_SPRITE);
                                  for i=1:shape.plane.numPlanes
@@ -532,45 +491,20 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                                  end
                                  glDisable(GL.POINT_SPRITE);
                                     glPushMatrix;
-                                    glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
-                                    glCallList(shape.mask.listIds(1));
+                                    glTranslatef(-shape.plane.widths_m(1), 0.0, -0.001);
+                                    glCallList(shape.plane.listIds(1));
                                     glPopMatrix;
                                     
                                     
                                     glPushMatrix;
-                                    glTranslatef(0.0, 0.0, 0.0);
-                                    glCallList(shape.mask.listIds(2));
+                                    glTranslatef(0.0, 0.0, -0.001);
+                                    glCallList(shape.plane.listIds(2));
                                     glPopMatrix;
 
                                     glPushMatrix;
-                                    glTranslatef(shape.plane.widths_m(3), 0.0, 0.0);
-                                    glCallList(shape.mask.listIds(3));
+                                    glTranslatef(shape.plane.widths_m(3), 0.0, -0.001);
+                                    glCallList(shape.plane.listIds(3));
                                     glPopMatrix;
-                                 %glBindTexture(GL.TEXTURE_2D, 0);
-                                %
-                                %glBindTexture(GL.TEXTURE_2D, 0)
- %                           end
- %                       end
-                       % glDisable(GL.POINT_SPRITE);
-                      % end
-                        %glCallList(ds.point)
-                        %
-                       % toc
-                        %glCallList(ds.planes(1));
-                        %                           glPopMatrix;
-                        %
-                        %                           glPushMatrix;
-                        %                           glTranslatef(0.0 + xDotDisplacement, 0.0, 0.0 + zDotDisplacement);
-                        %                           glCallList(ds.planes(2));
-                        %                           glPopMatrix;
-                        %
-                        %                           glPushMatrix;
-                        %                           glTranslatef(ds.planeWidths_m(3) + xDotDisplacement, 0.0, 0.0 + zDotDisplacement);
-                        %                           glCallList(ds.planes(3));
-                        %                           glPopMatrix;
-                        
-                        %if mask == 1, drawTheHoleyBag(ds, 1), end
-                        %%TVPM + MASK
                     elseif planes == 1 && mask == 1
                         
                         %moglDrawDots3D(ds.w, [0 0  shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2);% draw fixation dot
@@ -859,7 +793,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
             modelView = oc.initialState.modelView{ds.renderPass + 1}; % Use per-eye modelView matrices
             
             % N/A, redundant compared to modelView above. pa.modelViewSaveOutForFixed{ds.renderPass + 1} =  oc.initialState.modelView{ds.renderPass + 1};
-            
+            glMatrixMode(GL.MODELVIEW) % BJ: 3/17 added glMatMode call, cause it seems correct and was 
             glLoadMatrixd(modelView);
             
             Screen('EndOpenGL', ds.w);
