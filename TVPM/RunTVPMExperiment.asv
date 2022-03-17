@@ -356,7 +356,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 glClear(); % clear the buffers - must be done for every frame
                 glColor3f(1,1,1);
                 
-                glPushMatrix;
+                %glPushMatrix;
                 %% Experiment Logic
                 if ds.vbl <  pa.trialOnset + pa.targetMotionDuration % if current time < present until time: draw target, 1 s target motion
                     

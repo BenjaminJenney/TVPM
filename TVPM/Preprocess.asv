@@ -46,6 +46,7 @@ for ii = 1:pa.nTrials %pa.nTrials = 60 ; BJ: Number of frames per trial is depen
             xDotDisplacement = pa.transSpeed.*sind(-1.*pa.heading(pa.trialNumber)).*elapsedTime; % CSB: should be in meters. check. % ATTN: take negative of heading angle, so it displays correctly. otherwise displayed heading is inverse of ground truth
             % pa.rotVelocityRadPursuit(pa.trialNumber) = deg2radtrialNumber)).*elapsedTime; % CSB: should be in meters. check. % ATTN: take negative of heading angle, so it displays correctly. otherwise displayed heading is inverse of ground truth
             zDotDisplacement = pa.transSpeed.*cosd(-1.*pa.heading(pa.trialNumber)).*elapsedTime;  % JT: make sure this trig is right.
+            glPushMatrix; % Push copy of the current modelview, so we can overwrite with identity for optic flow.
             glLoadIdentity;
             %                preMV = glGetFloatv(GL.MODELVIEW_MATRIX);
             %                preMV = reshape(preMV, [4,4]);
@@ -88,6 +89,8 @@ for ii = 1:pa.nTrials %pa.nTrials = 60 ; BJ: Number of frames per trial is depen
         %end      
     end    
 end
+
+glPopMatrix; % Pop identity modelview off the stack, now the VR modelview is at the top. 
 
 % debug CSB jan 24 2022
 % figure;
