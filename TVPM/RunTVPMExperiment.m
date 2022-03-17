@@ -513,10 +513,12 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                                  for i=1:shape.plane.numPlanes
 
                                     %DRAW DISKS
+                                    glPushMatrix;
                                     glBindTexture(type, shape.disk.texture.id)
                                     moglDrawDots3D(ds.w, [posX{i}, posY{i}, shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
                                     %moglDrawDots3D(ds.w, [shape.disk.X_m{i},shape.disk.Y_m{i},shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
                                     glBindTexture(type, 0);
+                                    glPopMatrix
                                     %plot3(posX{1}, posY{1},shape.disk.Z_m{1}, 'r.'); hold on;  plot3(posX{2}, posY{2}, shape.disk.Z_m{2}, 'b.'); hold on; plot3(posX{3}, posY{3}, shape.disk.Z_m{3 }, 'g.');
                                     %plot3(shape.disk.X_m{1}, shape.disk.Y_m{1}, shape.disk.Z_m{1}, 'r.'); hold on;  plot3(shape.disk.X_m{2}, shape.disk.Y_m{2}, shape.disk.Z_m{2}, 'b.'); hold on; plot3(shape.disk.X_m{3}, shape.disk.Y_m{3}, shape.disk.Z_m{3}, 'g.');
                                     %keyboard

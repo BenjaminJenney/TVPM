@@ -178,7 +178,7 @@ function shape = SetupShapes(ds, pa)
     
     %RIGHT EYE
     mask(:, :, 2) = gauss; % restart Alpha with original raised cosine calc.
-    frontCols = mask(1:end-round(d_px/2)+1,:,2); % Take the columns up to end (disparity shift)
+    frontCols = mask(1:end-round(d_px/2)+1,:,2); % Take the columns up to end-disparity shift)
     mask(:,:,2) = 1; % reset Alpha to completely opaque
     mask(round(d_px/2):end,:,2) = frontCols; % paste to the end of the Alpha chanel
     bag(:,:,4) = mask(:,:,2)';% circshift(mask(:,:,2)', 50,2);

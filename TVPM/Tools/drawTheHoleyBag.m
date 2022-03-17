@@ -12,9 +12,5 @@ function drawTheHoleyBag(fullWindowMask, ds, openglIsEnabled)
         Screen('BeginOpenGL', ds.w);
         return;
     end
-    
-    Screen('DrawTextures', fullWindowMask, ds.masktex, [], ds.dstRects); % see setupDisplay for rest of code doing this
-    Screen('DrawTexture', ds.w, fullWindowMask, [], [], [], [], 1);  
-    Screen('DrawTextures', fullWindowMask, ds.masktex, [], ds.dstRects); % see setupDisplay for rest of code doing this
-    Screen('DrawTexture', ds.w, fullWindowMask, [], [], [], [], 1);
+
 end
