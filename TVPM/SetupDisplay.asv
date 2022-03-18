@@ -283,13 +283,9 @@ glClearColor(0.5,0.5,0.5,1); % mid-gray
 % handling will screw up in funny ways...
 glClear;
 
-glEnable(GL_TEXTURE_2D); % Prepare environment for low level OpenGL Texture Rendering
-                         % If geometry is not textured, it's likely because
-                         % GL_TEXTURE_2D is not enabled
-
 % Finish OpenGL rendering into PTB window. This will switch back to the
 % standard 2D drawing functions of Screen and will check for OpenGL errors.
-
+glEnable(GL.)
 Screen('EndOpenGL', ds.w);
 
 ds.ifi = Screen('GetFlipInterval', ds.w); % Get duration of a single frame

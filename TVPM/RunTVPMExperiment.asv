@@ -1,4 +1,4 @@
-function RunTVPMExperiment(subjectInitials,condition,monocularFlag,trainingFlag,mask,planes)
+function RunTVPMExperiment(subjectInitials,condition,monocularFlag,trainingFlag,mask)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% INFO %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Authors:     Charlie Burlingham and Jonathan Trattner, based on code by
 %              Jackie Fulvio and Bas Rokers
@@ -23,7 +23,7 @@ sca;
 %% Init input variables
 
 pa.subjectName = subjectInitials; % initials of participant
-ds.experimentType = condition; % 'real', 'simulated', 'stabilized'
+ds.experimentType = condition; % 'real', 'simulated', 'stabilized', 'tvpmfull', 'tvpmmask'
 ds.monocularFlag = monocularFlag; % 1: monocular viewing, 2: binocular viewing
 pa.TRAINING = trainingFlag; % 1 for training runs (will run two runs without rotation), or 0 for experiment (18 runs, all rotation velocities and headings)
 
@@ -51,15 +51,6 @@ InitializeMatlabOpenGL(1);
 PsychDefaultSetup(2); % the input of 2 means: execute the AssertOpenGL command, execute KbName('UnifyKeyNames') routine, AND unifies the color mode and switches from 0-255 to 0.0-1.0 - color part only impacts the current function or script, not ones that are called
 
 %% Initialize screen, experimental parameters, and keyboard
-% [ds,oc] = SetupDisplay(ds); %(oc); % set up the display, based on the DK2
-% [ds,pa] = SetupParameters(ds,pa); % set up the experimental parameters for this session
-% shape   = SetupShapes(ds,pa);
-% kb = SetupKeyboard(ds,DEBUG_FLAG); % get the keyboard info for the participant's responses
-% pa.runNumber = 1;
-
-
-% [hGratings, yPhaseChange, xPhaseChange] = Preprocess(ds, pa, kb, oc, shape, GL);
-
 [ds,oc] = SetupDisplay(ds); %(oc); % set up the display, based on the DK2
 [ds,pa] = SetupParameters(ds,pa); % set up the experimental parameters for this session
 shape   = SetupShapes(ds,pa);
@@ -71,54 +62,7 @@ pa.runNumber = 1; % initialize the run counter
 pa.readyToBeginRun = 0; % initialize the ready-to-begin-a-new-run variable
 readyToBegin = 0;
 Screen('BeginOpenGL', ds.w);
-%mask3DScratch(ds,pa)
 type = GL.TEXTURE_2D;
-%{ sf = 4; %.1; % cycles per deg
-% sf = (ds.deg_per_px).*sf; %1/px_per_deg %convert from deg to 
-% af = 2*pi*sf;
-% xGrating  = (.5 + .5 * sin(af * shape.disk.texture.x - 0)); % vertically oriented grating
-% yGrating  = (.5 + .5 * cos(af * shape.disk.texture.y - 0)); % horiz grating
-% plaidData = 255.*((xGrating + yGrating)/2);
-% plaidData = repmat(plaidData,[ 1 1 3 ]);
-% %x = single(plaidData);
-% plaidData = permute(plaidData,[ 3 2 1 ]);
-% 
-% type = GL_TEXTURE_2D;
-% s1 = 64; s2 = 64;
-% [x,y] = meshgrid(-1*(s1/2):(s1/2)-1, -1*(s2/2): (s2/2)-1);
-% pa.rmin_bg = 45.6874;% pixels 
-% pa.rmax_bg = 137.7631;% pixels  
-% pa.rstrip = 11.6268;% this cuts a strip into the fixation disk that has a height the size of the paddle height
-% aperture = zeros(s1,s2).*255;
-% opaque = ones(size(x'));
-% opaque = min(opaque, ((sqrt((x').^2+(y').^2) > pa.rmax_bg))); % | ((abs(y') > pa.rstrip) & sqrt((x').^2+(y').^2) < pa.rmin_bg)));
-% 
-% %gauss = ((1-exp(-((x/sigma).^2)-((y/sigma).^2)))).*255;
-% %keyboard
-%  aperture = repmat(aperture,[ 1 1 4 ]);
-%  aperture = permute(aperture,[ 3 2 1 ]);
-%  aperture(4,:,:) = shiftdim(255 .* opaque, -1);
-%   
-%      % keyboard
-% textureid = glGenTextures(2);
-% glBindTexture(type, textureid(1));
-% glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.REPEAT);
-% glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
-% glTexParameterfv(type, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
-% glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR);
-% glTexImage2D(type, 0, GL.RGB, shape.disk.texture.width, shape.disk.texture.width, 0, GL.RGB, GL.UNSIGNED_BYTE, uint8(plaidData));
-% glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
-% glBindTexture(type,0);
-% 
-% glBindTexture(type, textureid(2));
-% glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.REPEAT);
-% glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
-% glTexParameterfv(type, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
-% glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR); 
-% glTexImage2D(type, 0, GL.RGBA, s1, s2, 0, GL.RGBA, GL.UNSIGNED_BYTE, uint8(aperture));
-% glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
-% glBindTexture(type,0)
-    %keyboard %}
  Screen('EndOpenGL', ds.w);
 while ~readyToBegin % confirm everything's ready to go
     
@@ -188,67 +132,14 @@ pa.block = 0;
 kb.nextTrialKey = 0;
 
 rotationMatrixYawHomo = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]; % initialize for simulated condition
-%[hGratings, hPhaseChange, vPhaseChange] = Preprocess(ds,pa,shape,GL);
 
 while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
-    Screen('BeginOpenGL', ds.w);
-    shape.disk = diskPos(ds, shape.disk, shape.plane);
-    corners = [0 0; 
-               1 0; 
-               1 1; 
-               0 1];
-    maskTexHalfWidth  = floor(shape.plane.TextureWidth_px/2);
-    maskTexHalfHeight = floor(shape.plane.TextureHeight_px/2);
-    
-    apertureSize_px = pa.apertureDia_px;
-    [x,y]  = meshgrid(-maskTexHalfWidth+1:maskTexHalfWidth, -maskTexHalfHeight+1:maskTexHalfHeight);
-    opaque = ones(size(x));
-    maskWidths_m  = zeros(1, shape.plane.numPlanes);
-    maskHeights_m = zeros(1, shape.plane.numPlanes);
-    maskDepths_m  = shape.plane.depths_m + .001;
-    for i = 1:shape.plane.numPlanes
-        maskWidths_m(i)  = 2 * -maskDepths_m(i) * tand((ds.hFOV_perPersonAvg/shape.plane.numPlanes)/2);
-        maskHeights_m(i) = 2 * -maskDepths_m(i) * tand(ds.vFOV_perPersonAvg/2);
-    end
-    
-    
-    shape.mask.widths_m = maskWidths_m;
-    shape.mask.heights_m = maskHeights_m;
-
-    for i = 1:shape.plane.numPlanes
-        blackTexData = zeros(maskTexHalfWidth*2, maskTexHalfHeight*2);%.*255;
-        blackTexData = repmat(blackTexData',[ 1 1 3 ]);
-        blackTexData = permute(uint8(blackTexData),[ 3 2 1 ]);
-        for j = 1:shape.disk.numDisksPerPlane
-            opaque = min(opaque, sqrt((x + shape.disk.X_px{i}(j)).^2 + (y + shape.disk.Y_px{i}(j)).^2)>apertureSize_px);
-        end
-        ithMaskVertices = [-maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
-                            maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
-                            maskWidths_m(i)/2  maskHeights_m(i)/2 maskDepths_m(i);...
-                           -maskWidths_m(i)/2  maskHeights_m(i)/2 maskDepths_m(i)]';
-        
-        blackTexData(4,:,:) = shiftdim(255 .* opaque', -1);%
-        %keyboard
-        shape.mask.texture(i) = Texture(GL, type, 2*maskTexHalfWidth, 2*maskTexHalfHeight, uint8(blackTexData));
-        shape.mask.listIds(i) = glGenLists(1);
-        glNewList(shape.mask.listIds(i), GL.COMPILE);
-            shape.mask.texture(i).bind
-            glBegin(GL.POLYGON);
-            for j = 1:shape.plane.numVertices
-                glTexCoord2dv(corners(j,:));
-                glVertex3dv(ithMaskVertices(:,j));
-            end
-            glEnd;
-            shape.mask.texture(i).unbind;
-       glEndList();
-    end
-    Screen('EndOpenGL', ds.w);
-    if planes == 1 && mask == 0
+    if ds.tvpmfull
         [vXw, vYw, shape] = Preprocess(ds, pa, shape, GL);% m/f in world coords
     end
     while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
         ds.fCount = ds.fCount + 1; % frame count
-        if ds.vbl <  pa.trialOnset + pa.targetMotionDuration && mask == 0 % if still presenting stim
+        if ds.tvpmfull && ds.vbl <  pa.trialOnset + pa.targetMotionDuration  % if still presenting stim
             if ds.fCount == 1 
                 clear posX; clear posY;
                 for i = 1:shape.plane.numPlanes
@@ -259,22 +150,17 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 end
                 
             else
+                %{ KEEP THIS BLOCK
 %                 for i = 1:shape.plane.numPlanes
 %                     posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
 %                     posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
 %                     
 %                 end
                 %ds.fCount
+                %}
             end
         end
-%          vidX(ds.fCount,:) = posX{1}';
-%          vidY(ds.fCount,:) = posY{1}';
-%          
-%         if ds.fCount == 70
-%              keyboard
-%          end
-        %}
-        % Get HMD state
+
         if isempty(ds.hmd) % Oculus is not connected - will display a poor imitation of the Oculus rift on your main computer screen
             if ~exist('state')
                 state = oc.defaultState; % just set to a default, non-updating viewpoint
@@ -342,7 +228,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 else
                     modelView = eye.modelView; % Extract modelView matrix for this eye:
                 end
-                %Screen('DrawTextures', ds.fullWindowMask, ds.masktex, [], ds.dstRects); % see setupDisplay for rest of code doing this
+
                 Screen('BeginOpenGL', ds.w); % Manually reenable 3D mode in preparation of eye draw cycle
                 
                 % Setup camera position and orientation for this eyes view:
@@ -359,10 +245,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 glPushMatrix;
                 %% Experiment Logic
                 if ds.vbl <  pa.trialOnset + pa.targetMotionDuration % if current time < present until time: draw target, 1 s target motion
-                    
-                    %disp(['frame = ' num2str(pa.frame)])
-                    %disp(['vbl = ' num2str(ds.vbl)])
-                    
+
                     pa.flippy = 1; % binary variable for presenting fixation in simulated condition in a single spot
                     
                     pa.RotationVel(pa.trialNumber) = pa.rotSpeedVecRandThisRun(pa.trialNumber); %current rotation velocity to be used in the staircase determination and speed setting
@@ -391,8 +274,6 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     
                     elapsedTime = (ds.vbl-pa.trialOnset); % elapsed time in seconds since trial start (pressing space bar)
                     
-                    % Calculate instantaneous delta t
-                    %dt = GetSecs() - ds.vbl; % delta t in secs
                     
                     xDotDisplacement = pa.transSpeed.*sind(-1.*pa.heading(pa.trialNumber)).*elapsedTime; % CSB: should be in meters. check. % ATTN: take negative of heading angle, so it displays correctly. otherwise displayed heading is inverse of ground truth
                     % pa.rotVelocityRadPursuit(pa.trialNumber) = deg2radtrialNumber)).*elapsedTime; % CSB: should be in meters. check. % ATTN: take negative of heading angle, so it displays correctly. otherwise displayed heading is inverse of ground truth
@@ -419,17 +300,12 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     end
                     
                     
-                    if ds.simulated && planes == 0
+                    if ds.simulated && ds.tvpmplanes == 0
                         
                         glPushMatrix;
                         
-                        %if sign(pa.heading(pa.trialNumber)) ==1
                         
                         gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-pa.cubeWidth/4,0,1,0);
-                        
-                        %elseif sign(pa.heading(pa.trialNumber)) ==-1
-                        %    gluLookAt(-xDotDisplacement - (.064/2),0,-zDotDisplacement,0,0,-pa.cubeWidth/4,0,1,0);
-                        %end
                         
                         moglDrawDots3D(ds.w, pa.sphere, 3, [1 1 1 1], [], 2); %drawing sphere
                         
@@ -442,7 +318,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         end
                         
                         moglDrawDots3D(ds.w, [0 0  shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
-                    elseif ds.real && planes == 0
+                    elseif ds.real
                         %{
                         %                         glPushMatrix;
                         %                         %glTranslatef(xDotDisplacement,0,zDotDisplacement); % shift the dot world to its position along its trajectory for this frame
@@ -464,8 +340,8 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         
                         moglDrawDots3D(ds.w, [0 0  shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
                         glPopMatrix;
-                        %%TVPM FULL
-                     elseif planes == 1 && mask == 0
+                        
+                     elseif ds.tvpmfull
 
                          glEnable(GL.POINT_SPRITE);
                                  for i=1:shape.plane.numPlanes
@@ -489,29 +365,27 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
 %                                     glBindTexture(type, 0);
                                      %END APERTURES
                                  end
-                                 glDisable(GL.POINT_SPRITE);
-                                    glPushMatrix;
-                                    glTranslatef(-shape.plane.widths_m(1), 0.0, -0.001);
-                                    glCallList(shape.plane.listIds(1));
-                                    glPopMatrix;
-                                    
-                                    
-                                    glPushMatrix;
-                                    glTranslatef(0.0, 0.0, -0.001);
-                                    glCallList(shape.plane.listIds(2));
-                                    glPopMatrix;
-
-                                    glPushMatrix;
-                                    glTranslatef(shape.plane.widths_m(3), 0.0, -0.001);
-                                    glCallList(shape.plane.listIds(3));
-                                    glPopMatrix;
-                    elseif planes == 1 && mask == 1
+                        glDisable(GL.POINT_SPRITE);
                         
-                        %moglDrawDots3D(ds.w, [0 0  shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2);% draw fixation dot
-                        %glColor3f(1.0,1.0,1.0);
-                       % glAlphaFunc(GL_GREATER, 0.5); %diskards px fragments below .5 alpha value
-                        %glEnable(GL_ALPHA_TEST);      %This way we can see the post without render ordering problems
-                        %moglDrawDots3D(ds.w, [0 0  shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2);
+                        %{ Draw the 3 masks for TVPM Full %}
+                        glPushMatrix;
+                        glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
+                        glCallList(shape.mask.listIds(1));
+                        glPopMatrix;
+
+
+                        glPushMatrix;
+                        glTranslatef(0.0, 0.0, 0.0);
+                        glCallList(shape.mask.listIds(2));
+                        glPopMatrix;
+
+                        glPushMatrix;
+                        glTranslatef(shape.plane.widths_m(3), 0.0, 0.0);
+                        glCallList(shape.mask.listIds(3));
+                        glPopMatrix;
+                    
+                    elseif ds.tvpmplanes
+                        
                         glPushMatrix;
                         glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
                         glCallList(shape.plane.listIds(1));
@@ -527,14 +401,11 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         glCallList(shape.plane.listIds(3));
                         glPopMatrix;
 
-                       % glDisable(GL_ALPHA_TEST);
-                        if mask == 1
-                            if renderPass == 0
-                                drawTheHoleyBag(shape.mask.fullWindowMaskLeftEye, ds, 1);
-                            end
-                            if renderPass == 1
-                                drawTheHoleyBag(shape.mask.fullWindowMaskRightEye, ds, 1);
-                            end
+                        if renderPass == 0
+                            drawTheHoleyBag(shape.mask.fullWindowMaskLeftEye, ds, 1);
+                        end
+                        if renderPass == 1
+                            drawTheHoleyBag(shape.mask.fullWindowMaskRightEye, ds, 1);
                         end
                         
                     end
@@ -546,24 +417,25 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     
                 elseif ~kb.responseGiven && ds.vbl >  pa.trialOnset + pa.targetMotionDuration && ds.vbl <=  pa.trialOnset + pa.targetMotionDuration + pa.itiLength  % show paddle and allow observers to adjust its position - no time constraints - they press the space bar to lock in their response and start a new trial
                     
-                    if ds.real && planes == 0
+                    if ds.real
                         glPushMatrix;
                         glTranslatef(xDotDisplacement,0,zDotDisplacement); % shift the target to its position along its trajectory for this frame
                         moglDrawDots3D(ds.w, pa.sphere, 3, [1 1 1 1], [], 2); %drawing sphere
                         moglDrawDots3D(ds.w, [0 0 shape.plane.depths_m(2)], 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
                         glPopMatrix;
-                    elseif ds.simulated && planes == 0
+                    elseif ds.simulated && ds.tvpmplanes == 0
                         glPushMatrix;
                         gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
                         moglDrawDots3D(ds.w, pa.sphere, 3, [1 1 1 1], [], 2); %drawing sphere
                         glPopMatrix;
                         moglDrawDots3D(ds.w, [0 0 shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
-                    elseif planes == 1 && mask == 1
-
-
+                   
+                    %{
+                        ATTN: Do we need more elseif conditions here for
+                        TVPM Full and tvpmplanes?!?
+                    %}
+                        
                     end
-                    
-                    
                     pa.responseOnset = ds.vbl; % start the timer on the response time
                     
                     if ~pa.stairCaseCodeRanAlready(1) == 1 % so just run staircase code ONCE per trial and then reset dummy vairable in setupNewTrial
@@ -735,12 +607,6 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 glPopMatrix; % reset back to the origin
                 moglDrawDots3D(ds.w, [inf inf inf], 10, [1 1 1 1], [], 2); % 'hack' to fix transparency issue - same one we've used in all 3D pong experiments - definitely works!
                 
-                % for mask (OLD - 1/f wall)
-                %               glBindTexture(GL.TEXTURE_2D,ds.wall_texid);
-                %               glCallList(ds.surroundTexture); % 1/f noise texture surround -  comes from CreateTexturesforSDK2.m
-                %               glBindTexture(GL_TEXTURE_2D, 0);
-                
-                
                 % Manually disable 3D mode before switching to other eye or to flip:
                 Screen('EndOpenGL', ds.w);
                 
@@ -750,17 +616,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 % Repeat for renderPass of other eye
             end
         end
-        %if ds.fCount >= 71
-        %   ds.fCount = 1;
-%           keyboard;
-        %end
         
-%         psX(k) = posX{1};
-%         psY(k) = posY{1}; For plotting optic flow 
-%         psZ(k) = posZ{1};
-%         k = k + 1;
-
-%        
         % Head position tracked in the HMD?
         if ~isempty(ds.hmd)
             if ~bitand(state.tracked, 2) && ds.trackingFlag==1
@@ -773,8 +629,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
         % as this is done in the next iteration via glClear() call anyway:
         Screen('DrawingFinished', ds.w);
         
-        Screen('Flip', ds.w,[],[],1);%, [], [], 2);%, ds.vbl + (1-0.5) * ds.ifi);
-        % imageArray=Screen(‘GetImage’, windowPtr [,rect] [,bufferName] [,floatprecision=0] [,nrchannels=3])
+        Screen('Flip', ds.w,[],[],1);
         ds.vbl = GetSecs();
         
     end
@@ -793,7 +648,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
             modelView = oc.initialState.modelView{ds.renderPass + 1}; % Use per-eye modelView matrices
             
             % N/A, redundant compared to modelView above. pa.modelViewSaveOutForFixed{ds.renderPass + 1} =  oc.initialState.modelView{ds.renderPass + 1};
-            glMatrixMode(GL.MODELVIEW) % BJ: 3/17 added glMatMode call, cause it seems correct and was 
+            glMatrixMode(GL.MODELVIEW) % BJ: 3/17 added glMatMode call, if you load modelView it makes sense that we should be in that mode.
             glLoadMatrixd(modelView);
             
             Screen('EndOpenGL', ds.w);

@@ -57,7 +57,6 @@ function shape = SetupShapes(ds, pa)
                             widths_m(i)/2  heights_m(i)/2 depths_m(i) ;...
                            -widths_m(i)/2  heights_m(i)/2 depths_m(i) ]';
         shape.plane.vertices{i} = ithPlaneVertices;
-        %ds.initPositions{i} = opticFlow(shape.plane.widths_m(i), shape.plane.heights_m(i), shape.plane.depths_m(i), 50);
         shape.plane.listIds(i)  = glGenLists(1);
         glNewList(shape.plane.listIds(i), GL.COMPILE);
             shape.plane.textures(i).bind;
@@ -138,51 +137,111 @@ function shape = SetupShapes(ds, pa)
     glBindTexture(type,0);
    Screen('EndOpenGL', ds.w);
    
-    %% Masks
+    %% Full Window Mask
+    % Unlike the other shapes the Full Window Mask is drawn with high level
+    % PsychToolBox functions since the Full Window Mask essentially has no
+    % depth and can be expressed with only 2 dimensions.
+    
+    
+    %{ Force disparity of the Full Window Mask to match the disparity of the middle plane %}
     b = .067; % inter-pupillary distance in meters TODO: Figure out if there is a way to get IP from the headset instead of hardcoding.
     Z = shape.plane.depths_m(2); % depth of middle plane.
     d_deg = 2.*( atand((b./2)./(2.*Z)) - atand((-b./2)./(2.*Z)) ); % Should fix disparity of the mask.
     d_px  = abs(d_deg*ds.px_per_deg);
 
-    % Get the size of the on screen window
-    [screenXpixels, screenYpixels] = Screen('WindowSize', ds.w);
-    white = WhiteIndex(0);
+    [screenXpixels, screenYpixels] = Screen('WindowSize', ds.w);% Get the size of the on screen window
     black = BlackIndex(0);
 
-    % Make a gaussian aperture with the "alpha" channel
+    %{ Make a raised Cosine aperture for the "alpha" channel of the mask %}
     gaussDim = pa.apertureDia_px; %100 px? TODO: DOES NOT SEEM TO CHANGE SIZE. 
     gaussSigma = pa.apertureDia_px; %gaussDim /4; % csb: controls how big the apertures are
     s1 = screenXpixels;
     s2 = screenYpixels;
     [xm, ym] = meshgrid(-(s2/2)+1:s2/2, -(s1/2)+1:s1/2);
-    %ym   = randi([-s2/2, s2/2], s2/2, s2/2);
-    %gauss = exp(-(((xm .^2) + (ym .^2)) ./ (2 * gaussSigma^2)));
     f = abs(cos(1/15.*[-s2/2:s2/2])).^8; f2 = f'*f;
-     gauss = f2(1:s1,1:s2);
+     raisedCos = f2(1:s1,1:s2);
     fixationHole_px = 15 ;
-    gauss = 1-gauss;
-    gauss = min((gauss), sqrt((xm).^2 + (ym).^2)>fixationHole_px);
+    raisedCos = 1-raisedCos;
+    raisedCos = min((raisedCos), sqrt((xm).^2 + (ym).^2)>fixationHole_px);
     
-    bag = ones(screenYpixels, screenXpixels) .* black;
+    %{ Create texture image data for Full Window Mask %}
+    bag = ones(screenYpixels, screenXpixels) .* black; 
     bag = repmat(bag,[ 1 1 3 ]);
     
-    % LEFT EYE
-    mask          = ones(s1, s2, 1);
-    mask(:, :, 2) = gauss; % Original Raised cosine calculation
-    mask(:,:,2)   = round(mask(:,:,2),3,'significant');
-    endCols       = mask(round(d_px/2)+1:end,:,2);
-    mask(:,:,2)   = 1;
-    mask(1:end - round(d_px/2),:,2) = endCols;
-    bag(:,:,4)    = mask(:,:,2)';%circshift(mask(:,:,2)', 50,2);
+    %Force Disparity LEFT EYE
+    alphaMask        = ones(s1, s2, 1); % init alpha channel  TPB Standard 0:completely transluscent -- 255:completely opaque. 
+    alphaMask(:,:,1) = raisedCos; % Original Raised cosine calculation
+    alphaMask(:,:,1) = round(alphaMask(:,:,1),3,'significant');
+    endCols          = alphaMask(round(d_px/2)+1:end,:,1);
+    alphaMask(:,:,1) = 1;
+    alphaMask(1:end - round(d_px/2),:,1) = endCols;
+    bag(:,:,4)       = alphaMask(:,:,1)';
     shape.mask.fullWindowMaskLeftEye = Screen('MakeTexture', ds.w, bag);
     
     %RIGHT EYE
-    mask(:, :, 2) = gauss; % restart Alpha with original raised cosine calc.
-    frontCols = mask(1:end-round(d_px/2)+1,:,2); % Take the columns up to end (disparity shift)
-    mask(:,:,2) = 1; % reset Alpha to completely opaque
-    mask(round(d_px/2):end,:,2) = frontCols; % paste to the end of the Alpha chanel
-    bag(:,:,4) = mask(:,:,2)';% circshift(mask(:,:,2)', 50,2);
+    alphaMask(:,:,1) = raisedCos; % restart Alpha with original raised cosine calc.
+    frontCols = alphaMask(1:end-round(d_px/2)+1,:,1); % Take the columns up to end (disparity shift)
+    alphaMask(:,:,1) = 1; % reset Alpha to completely opaque
+    alphaMask(round(d_px/2):end,:,1) = frontCols; % paste to the end of the Alpha chanel
+    bag(:,:,4) = alphaMask(:,:,1)';% circshift(mask(:,:,2)', 50,2);
     shape.mask.fullWindowMaskRightEye = Screen('MakeTexture', ds.w, bag);
+    
+    %% Masks for TVPM Full
+    Screen('BeginOpenGL', ds.w);
+    
+    shape.disk = diskPos(ds, shape.disk, shape.plane); % Get plaid positions for TVPM-Full, bounded by shape.plane  
+        
+    corners = [0 0; 
+               1 0; 
+               1 1; 
+               0 1];
+           
+    maskTexHalfWidth  = floor(shape.plane.TextureWidth_px/2);
+    maskTexHalfHeight = floor(shape.plane.TextureHeight_px/2);
+    
+    apertureSize_px = pa.apertureDia_px;
+    [x,y]  = meshgrid(-maskTexHalfWidth+1:maskTexHalfWidth, -maskTexHalfHeight+1:maskTexHalfHeight);
+    opaque = ones(size(x));
+    maskWidths_m  = zeros(1, shape.plane.numPlanes);
+    maskHeights_m = zeros(1, shape.plane.numPlanes);
+    maskDepths_m  = shape.plane.depths_m + .001;
+    for i = 1:shape.plane.numPlanes
+        maskWidths_m(i)  = 2 * -maskDepths_m(i) * tand((ds.hFOV_perPersonAvg/shape.plane.numPlanes)/2);
+        maskHeights_m(i) = 2 * -maskDepths_m(i) * tand(ds.vFOV_perPersonAvg/2);
+    end
+ 
+    shape.mask.widths_m = maskWidths_m;
+    shape.mask.heights_m = maskHeights_m;
+
+    for i = 1:shape.plane.numPlanes
+        blackTexData = zeros(maskTexHalfWidth*2, maskTexHalfHeight*2);
+        blackTexData = repmat(blackTexData',[ 1 1 3 ]);
+        blackTexData = permute(uint8(blackTexData),[ 3 2 1 ]);
+        for j = 1:shape.disk.numDisksPerPlane
+            opaque = min(opaque, sqrt((x + shape.disk.X_px{i}(j)).^2 + (y + shape.disk.Y_px{i}(j)).^2)>apertureSize_px);
+        end
+        ithMaskVertices = [-maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
+                            maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
+                            maskWidths_m(i)/2  maskHeights_m(i)/2 maskDepths_m(i);...
+                           -maskWidths_m(i)/2  maskHeights_m(i)/2 maskDepths_m(i)]';
+        
+        blackTexData(4,:,:) = shiftdim(255 .* opaque', -1);%
+        %keyboard
+        shape.mask.texture(i) = Texture(GL, type, 2*maskTexHalfWidth, 2*maskTexHalfHeight, uint8(blackTexData));
+        shape.mask.listIds(i) = glGenLists(1);
+        glNewList(shape.mask.listIds(i), GL.COMPILE);
+            shape.mask.texture(i).bind
+            glBegin(GL.POLYGON);
+            for j = 1:shape.plane.numVertices
+                glTexCoord2dv(corners(j,:));
+                glVertex3dv(ithMaskVertices(:,j));
+            end
+            glEnd;
+            shape.mask.texture(i).unbind;
+       glEndList();
+       opaque = ones(size(x));
+    end
+    Screen('EndOpenGL', ds.w);
 
     %ds.masktex = Screen('MakeTexture', ds.w, mask);
 
