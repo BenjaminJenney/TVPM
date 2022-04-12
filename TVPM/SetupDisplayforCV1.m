@@ -20,7 +20,7 @@ PsychImaging('PrepareConfiguration');
 
 % Might want to try turning off DebugDisplay to improve latency
 ds.hmd = PsychVRHMD('AutoSetupHMD', 'Tracked3DVR', 'LowPersistence TimeWarp FastResponse DebugDisplay', 0); % 'TimingSupport' % on my setup, I have the Oculus runtime installed. As a result, it detects no HMDs if the Oculus is unplugged from the system, and then opens a simulated HMD window (in the wrong orientation), rather than simply displaying to the external monitor
-%     PsychVRHMD('SetHSWDisplayDismiss', ds.hmd, -1);
+%     PychVRHMD('SetHSWDisplayDismiss', ds.hmd, -1);
 %     PsychVRHMD('Verbosity',4); %3 = info; 4 = debug
 %     PsychImaging('AddTask', 'FinalFormatting', 'DisplayColorCorrection', 'SimpleGamma'); % gamma correction
 

@@ -7,8 +7,8 @@ function plaidData = staticPlaidData(ds, sf, x, y)
     sf = (ds.deg_per_px).*sf; %1/px_per_deg %convert from deg to 
     af = 2*pi*sf;
     
-    xGrating = (grey + inc * sin(af * x)); % vertically oriented grating
-    yGrating = (grey + inc * cos(af * y)); % horiz grating
+    xGrating = (grey + inc * sin(af .* x)); % vertically oriented grating
+    yGrating = (grey + inc * cos(af .* y)); % horiz grating
     plaidData = 255.*((xGrating + yGrating)/2);
     plaidData = repmat(plaidData,[ 1 1 3 ]);
     plaidData = permute(uint8(plaidData),[ 3 2 1 ]);

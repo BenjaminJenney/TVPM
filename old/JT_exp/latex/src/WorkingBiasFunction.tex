@@ -1,0 +1,61 @@
+% This file was created by matlab2tikz.
+%
+%The latest updates can be retrieved from
+%  http://www.mathworks.com/matlabcentral/fileexchange/22022-matlab2tikz-matlab2tikz
+%where you can also make suggestions and rate matlab2tikz.
+%
+\definecolor{mycolor1}{rgb}{0.00000,0.44700,0.74100}%
+\definecolor{mycolor2}{rgb}{0.85000,0.32500,0.09800}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=6.028in,
+height=4.622in,
+at={(1.011in,0.642in)},
+scale only axis,
+xmin=0,
+xmax=9,
+xlabel style={font=\bfseries\color{white!15!black}},
+xlabel={$\text{Gaze rotation rate }^{\circ}\text{/sec}$},
+ymin=-3,
+ymax=3,
+ylabel style={font=\bfseries\color{white!15!black}},
+ylabel={$\text{Bias}^{\circ}$},
+axis background/.style={fill=white},
+title style={font=\bfseries},
+title={Sample Bias Function},
+legend style={at={(0.97,0.03)}, anchor=south east, legend cell align=left, align=left, draw=white!15!black}
+]
+\addplot [color=mycolor1, mark=o, mark options={solid, mycolor1}]
+  table[row sep=crcr]{%
+0	0.05\\
+1	0.135\\
+2	0.21\\
+3	0.23\\
+4	0.25\\
+5	0.254\\
+6	0.256\\
+7	0.262\\
+8	0.293\\
+9	0.336\\
+};
+\addlegendentry{Active Head Pursuit}
+
+\addplot [color=mycolor2, mark=o, mark options={solid, mycolor2}]
+  table[row sep=crcr]{%
+0	0.606\\
+1	0.871\\
+2	1.146\\
+3	1.666\\
+4	1.336\\
+5	1.876\\
+6	1.986\\
+7	2.412\\
+8	2.256\\
+9	2.636\\
+};
+\addlegendentry{Simulated Head Pursuit}
+
+\end{axis}
+\end{tikzpicture}%

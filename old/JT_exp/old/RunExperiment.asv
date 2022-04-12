@@ -1,0 +1,610 @@
+% function RunExperiment
+% 14-Dec-2015  jf Written. Derived from OculusSDK2PongDemo_Fixed.m
+% 6-Jan-2016  jf Edited to improve lagged condition performance
+% 14-Jan-2016 jf  Switched over to Windows platform and optimized the code
+% for timing and stimulus presentation - including now measured gamma
+% correction
+% 19-Aug-2016 jf Added a few modifications: randomized paddle start angle
+% on each trial, feedback options, random/variable lag for lagged condition
+% Dec-Jan-2019 - JF updated code to work with CV1; minor changes to call of
+% projection matrices, added in CV1-specific FOV and other parameters
+
+%% Important note about coding of angles in Oculus space:
+
+% In the Oculus, angles are coded ccw - so, straight right = 0 deg,
+% directly in front of fixation = 90 deg, straight left = 180 deg, directly
+% behind fixation = 270 deg
+
+
+%% Basic per subject inputs:
+
+% Use SetupDisplay.m to establish experimental condition as active, fixed, or lagged (line 51, ds.experimentType)
+% Use SetupParameters.m to establish participant number for the data file names (line 11, pa.subjectName and line 12, pa.feedbackFlag)
+
+%% IMPORTANT!  The Oculus must be plugged in and turned on *before* starting MATLAB
+% The individual must be wearing the device prior to starting the
+% experimental program to achieve proper frame rate
+% Also the Oculus VR runtime version '0.5.0.1' *must* be installed for PTB
+% to properly interact with/recognize the Oculus DK2, otherwise, use the
+% latest version of the runtime for the CV1 (note: cannot have 2 versions
+% on one machine)
+clear all;
+close all;
+
+global DEBUG_FLAG KEYBOARD_FLAG CROSSHAIRS EXCLUSIONREGION MONOCULAR
+DEBUG_FLAG = 0; %1
+KEYBOARD_FLAG = 0; %1 % there is a call to 'keyboard' in SetupDisplay that was breaking the code when using the hmd so I created a flag to turn it on/off - not certain what it is for (JF)
+CROSSHAIRS = 0; %1 %to turn crosshairs on or off depending on trial
+EXCLUSIONREGION = 0; %To turn on or off the exclusion region
+MONOCULAR = 0;
+
+if DEBUG_FLAG
+    Screen('Preference', 'SkipSyncTests', 1); % For debugging
+end
+
+PsychDebugWindowConfiguration([],.4)
+
+
+% Setup Psychtoolbox for OpenGL 3D rendering support and initialize the
+% mogl OpenGL for Matlab/Octave wrapper:
+global GL; % GL data structure needed for all OpenGL programs
+InitializeMatlabOpenGL(1);
+PsychDefaultSetup(2); % the input of 2 means: execute the AssertOpenGL command, execute KbName('UnifyKeyNames') routine, AND unifies the color mode and switches from 0-255 to 0.0-1.0 - color part only impacts the current function or script, not ones that are called
+
+addpath(genpath([pwd filesep() 'Tools'])); % contains 'isodd.m' and 'oneoverf.m' for texture rendering
+
+% Initialize screen, xxperimental parameters, etc.
+[ds,oc] = SetupDisplay(); %(oc); % set up the display, based on the DK2
+
+[ds,pa] = SetupParameters(ds); % set up the experimental parameters for this session
+
+[ds,pa] = CreateTextures(ds, pa); % create the surround & paddle face textures as well as the ceiling, floor, and walls of the virtual room - just needs to be done once
+
+kb = SetupKeyboard(); % get the keyboard info for the participant's responses
+
+if ~DEBUG_FLAG
+    HideCursor(ds.screenId);
+    ListenChar(2); % Stop making keypresses show up in the matlab scripts and
+    %command window - it's really annoying and can cause all sorts of problems! % CSB: debug
+end
+
+%% Start the experiment - opening screen, getting the participant set
+
+pa.runNumber = 1; % initialize the run Counter
+pa.readyToBeginRun = 0; %initialize the ready to begin a new run variable
+
+readyToBegin = 0;
+while ~readyToBegin % confirm everything's ready to go
+    
+    % Camera position when using head tracking + HMD: (according to SuperShapeDemo.m)
+    globalPos = [0, 0, ds.viewingDistance]; % x,y,z  % in meters - just put something in here for now, will likely be much larger later for viewing the tv/'real' world - the demos use large values too
+    % ATTN: csb, why shouldn't ds.viewingDistance = 0?? ask bas
+    heading = 0; % yaw
+    ds.globalHeadPose = PsychGetPositionYawMatrix(globalPos, heading); % initialize observer's start position to the default camera position specified above
+    
+    if isempty(ds.hmd) % Oculus not connected
+        load DefaultHMDParameters.mat;
+        oc.defaultState = defaultState;
+        oc.initialState = defaultState.initialState;
+    else % Oculus connected
+        oc.initialState = PsychVRHMD('PrepareRender', ds.hmd, ds.globalHeadPose);  % get the state of the hmd now
+    end
+    
+    
+    instructionsCenterxL = ds.textCoords(2)-200+(pa.instructionDisparity/2);
+    instructionsCenterxR = ds.textCoords(2)-200-(pa.instructionDisparity/2);
+    
+    
+    for renderPass = 0:1 % loop over eyes
+        %if MONOCULAR && renderPass == 0 || ~MONOCULAR
+        ds.renderPass = renderPass;
+        Screen('SelectStereoDrawBuffer',ds.w,ds.renderPass);
+        Screen('BeginOpenGL',ds.w);
+        
+        % Setup camera position and orientation for this eyes view:
+        glMatrixMode(GL.PROJECTION)
+        glLoadMatrixd(ds.projMatrix{renderPass + 1});
+        
+        modelView = oc.initialState.modelView{ds.renderPass + 1}; % Use per-eye modelView matrices
+        
+        % N/A, redundant compared to modelView above. pa.modelViewSaveOutForFixed{ds.renderPass + 1} =  oc.initialState.modelView{ds.renderPass + 1};
+        
+        glLoadMatrixd(modelView);
+        
+        Screen('EndOpenGL', ds.w);
+        if renderPass == 0
+            Screen('DrawText',ds.w,'Ready to start the experiment?',instructionsCenterxL,ds.textCoords(1)-200,[1 1 1]);
+            Screen('DrawText',ds.w,'Press SPACE to confirm.',instructionsCenterxL,ds.textCoords(1)+50-200,[1 1 1]);
+        elseif renderPass == 1
+            Screen('DrawText',ds.w,'Ready to start the experiment?',instructionsCenterxR,ds.textCoords(1)-200,[1 1 1]);
+            Screen('DrawText',ds.w,'Press SPACE to confirm.',instructionsCenterxR,ds.textCoords(1)+50-200,[1 1 1]);
+        end
+        %   end
+    end
+    
+    Screen('DrawingFinished', ds.w);
+    ds.vbl = Screen('Flip', ds.w);
+    
+    [kb.keyIsDown, kb.secs, kb.keyCode] = KbCheck(-1); % query the keyboard
+    if kb.keyIsDown && kb.keyCode(kb.spacebarKey)
+        readyToBegin=1;
+    end
+end
+%% Participant is ready, so let's go
+ds.tElapsed = 0;
+ds.fCount = 0;
+
+[ds, pa, kb] = SetupNewTrial(ds, pa, kb);
+ds.vbl = pa.trialOnset;
+tStart = ds.vbl;
+pa.experimentOnset = ds.vbl;
+
+pa.block = 0;
+breakTime = 0;  % participants are running in the task
+kb.nextTrialKey = 0;
+
+while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey) 
+    
+    while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
+        
+        % Get HMD state
+        if isempty(ds.hmd) % Oculus is not connected - will display a poor imitation of the Oculus rift on your main computer screen
+            if ~exist('state')
+                state = oc.defaultState; % just set to a default, non-updating viewpoint
+            end
+        else   % Oculus is connected - uses PTB's code + openGL code to display in the HMD
+            % Track and predict head position and orientation, retrieve modelview
+            % camera matrices for rendering of each eye. Apply some global transformation
+            % to returned camera matrices. In this case a translation + rotation, as defined
+            % by the PsychGetPositionYawMatrix() helper function:
+            %state = PsychVRHMD('PrepareRender', ds.hmd, ds.globalHeadPose);  % Mark the start of the rendering cycle for a new 3D rendered stereoframe. Return a struct 'state' which contains various useful bits of information for 3D stereoscopic rendering of a scene, based on head tracking data
+        end
+        
+        % Render the scene separately for each eye:
+        
+        
+        for renderPass = 0:1 %0 left, 1 right eye
+            if (MONOCULAR && renderPass == 0) || (~MONOCULAR)
+                ds.renderPass = renderPass;
+                if isempty(ds.hmd) % hmd not connected
+                    % Get head position from keyboard input
+                    
+                    eye.eyeIndex = ds.renderPass; % We are switching eye index, but not the eye.modelview here
+                    % CSB: this inits camera matrix if it is empty
+                    % BR: This should happen outside of the loop init'd on line 131
+                    if ~isfield(eye,'modelView') % checks if camera matrix exists. it shouldn't on first trial and it will be init'd.
+                        if ds.renderPass==0 % drawing left eye
+                            eye.modelView = oc.defaultState.modelViewDataLeft;
+                        elseif ds.renderPass==1 % drawing right eye
+                            eye.modelView =  oc.defaultState.modelViewDataRight;
+                            % eye.modelView(1,4) =  eye.modelView(1,4)+100; % CSB: debug
+                        end
+                    end
+                    
+                    %[pa, kb, eye, ds, state]  = GetKeyboardHeadmotion(pa, ds, kb, eye, state);  % query the keyboard to allow the observer to rotate the paddle and eventually lock in his/her response to initiate a new trial
+                    
+                else % hmd connected
+                    % Query which eye to render in this ds.renderPass, and query its
+                    % eyePose vector for the predicted eye position to use for the virtual
+                    % camera rendering that eyes view. The returned pose vector actually
+                    % describes tracked head pose, ie. HMD position and orientation in space.
+                    
+                    eye = PsychVRHMD('GetEyePose', ds.hmd, ds.renderPass, ds.globalHeadPose);
+                    headRotationAloneInfo = eye.modelView; % this just tells you how head has rotated
+                    
+                    
+                    % this is for saving purposes to recreate participants' head motion
+                    if ds.renderPass % drawing right eye
+                        oc.modelViewDataRight = [oc.modelViewDataRight; eye.modelView];
+                    else % drawing left eye
+                        oc.modelViewDataLeft = [oc.modelViewDataLeft; eye.modelView];
+                    end
+                    
+                    if ~ds.trackingFlag % 'stabilized' condition loop - don't update the scene with tracked head motion, just use the default state
+                        eye.modelView = modelView; %pa.modelViewSaveOutForFixed{ds.renderPass + 1}; % oc.defaultState.initialState.modelView{ds.renderPass + 1}; % comes back from the initial call...will not update the scene based on head tracking
+                        state.tracked = 2;
+                        eye.eyeIndex = ds.renderPass;
+                    end
+                    
+                end
+                
+                Screen('SelectStereoDrawbuffer', ds.w, eye.eyeIndex); % Select 'eyeIndex' to render (left- or right-eye):
+                %modelView = eye.modelView; % Extract modelView matrix for this eye:
+                
+                Screen('BeginOpenGL', ds.w); % Manually reenable 3D mode in preparation of eye draw cycle
+                
+                % Setup camera position and orientation for this eyes view:
+                glMatrixMode(GL.PROJECTION)
+                glLoadMatrixd(ds.projMatrix{renderPass + 1});
+                
+                glMatrixMode(GL.MODELVIEW);
+                glLoadMatrixd(modelView); % updates openGL camera
+                
+                glClearColor(0, 0, 0, 1); % gray background
+                glClear(); % clear the buffers - must be done for every frame
+                glColor3f(1,1,1);
+                
+                %glPushMatrix;
+                %% Experiment Logic
+                if ds.vbl <  pa.trialOnset + pa.targetMotionDuration % if current time < present until time: draw target, 1 s target motion
+                    
+                    pa.RotationVel(pa.trialNumber) = pa.rotSpeedVecRandThisRun(pa.trialNumber); %current rotation velocity to be used in the staircase determination and speed setting
+                    pa.heading(pa.trialNumber) = pa.headingAngleVecRandThisRun(pa.trialNumber); % current heading direction
+                    
+                    if ds.real == 1
+                        for cc = 1:pa.numRotationVelocities % loop through rotation speeds
+                            if pa.RotationVel(pa.trialNumber) == cc
+                                pa.rotVelocityRadPursuit = deg2rad(pa.rotationVelocities(cc));
+                            end
+                        end
+                        
+                        pa.rotVelocityRad = deg2rad(0); % don't rotate world in real head rotation condition
+                    elseif ds.simulated == 1
+                        for cc = 1:pa.numRotationVelocities % loop through rotation speeds
+                            if pa.RotationVel(pa.trialNumber) == cc
+                                pa.rotVelocityRad = deg2rad(pa.rotationVelocities(cc));
+                            end
+                        end
+                        pa.rotVelocityRadPursuit = deg2rad(0); % don't rotate pursuit target in simulated head rotation condition
+                    elseif ds.stabilized == 1
+                        for cc = 1:pa.numRotationVelocities % loop through rotation speeds
+                            if pa.RotationVel(pa.trialNumber) == cc
+                                pa.rotVelocityRadPursuit = deg2rad(pa.rotationVelocities(cc)); % move pursuit target in stabilized condition
+                            end
+                        end
+                        pa.rotVelocityRad = deg2rad(0); % don't rotate world in stabilized conditions
+                    end
+                    
+                    elapsedTime = (ds.vbl-pa.trialOnset); % elapsed time in seconds since expt start (pressing space bar)
+                    
+                    % Calculate instantaneous delta t
+                    dt = GetSecs() - ds.vbl; % delta t in secs
+                    
+                    xDotDisplacement = pa.transSpeed.*sind(pa.heading(pa.trialNumber)).*elapsedTime; % CSB: should be in meters. check.
+                    zDotDisplacement = pa.transSpeed.*cosd(pa.heading(pa.trialNumber)).*elapsedTime;  % JT: make sure this trig is right.
+                    
+                    glPushMatrix;
+                    glTranslatef(xDotDisplacement,0,zDotDisplacement); % shift the target to its position along its trajectory for this frame
+                    normVecs = sqrt(sum(pa.sphereMaster.^ 2, 1));
+                    pa.sphere = pa.sphereMaster(:,normVecs>pa.sphereExclusionRegionRadius);
+                    moglDrawDots3D(ds.w, pa.sphere, 3, [1 1 1 1], [], 2); %drawing sphere
+                    glPopMatrix;
+                    
+                    pa.heading(pa.trialNumber)
+                    
+                    if ds.simulated == 1
+                        theta = pa.rotVelocityRad*elapsedTime;
+                        % CSB: for rotating camera .  Increase for more "sensitivity" to key press
+                        
+                        rotationMatrixYaw = [cos(theta) 0 sin(theta); 0 1 0; -sin(theta) 0 cos(theta);];
+                        
+                        
+                        initialModelView = eye.modelView; % this just tells you how head has rotated until now
+                        
+                        eye.modelView(1:3,1:3) = eye.modelView(1:3,1:3)*rotationMatrixYaw;
+                        
+                    end
+                    
+                    modelView = eye.modelView;
+                    
+                    
+                    % UNCOMMENT IF YOU WANT TO PLOT TWO FRONTOPARALLEL DOT PLANES INSTEAD OF SPHERE
+                    %moglDrawDots3D(ds.w, [dotPos1], 3, [1 1 1 1], [], 2);
+                    %moglDrawDots3D(ds.w, [dotPos2], 3, [1 1 1 1], [], 2);
+                    %moglDrawDots3D(ds.w, [0; 0; betweenPlanes], 50, [1 1 1 1], [],
+                    %2); %Dot in real world coordinates for determining
+                    %disparityRun
+                    
+                    
+                    %setup for pursuit target rotation
+                    thetaPursuit = rad2deg(pa.rotVelocityRadPursuit*elapsedTime);
+                    
+                    xPosPursuit = 20*sind(thetaPursuit); % ATTN: hardcoded. fix
+                    zPosPursuit =  20*cosd(thetaPursuit);
+                    
+                    
+                    
+                    fixationVertexPos = [0 0 -19.9]; %attn: HARDCODED
+                    
+                    if ds.simulated
+                        % make simulated rotation matrix into homogenous cooridnates and
+                        % invert it to transform back to original space before simulated rotation ... and
+                        % additionally multiply by inverse modelView to undo head tracking,
+                        % This will keep the fixation point in the line of sight.
+                        rotationMatrixYawHomo = [[rotationMatrixYaw; 0 0 0] [0 0 0 1]'];
+                        fixationPos = inv(modelView) * [fixationVertexPos, 1.0]'; % for fixation, must rotate back to center of screen according to BOTH head movement AND world rotation
+                        fixationPos = fixationPos(1:3);
+                        %Get ready to make the pursuit target fixed, too.
+                        pursuitTargetCoords = inv(rotationMatrixYawHomo) * [xPosPursuit, 0, -zPosPursuit 1]'; % fox pursuit, we want it fixed in the world, despite simulated rotation, so just rotate back according to simulated rotation
+                        
+                        %Translating the pursuit target
+                        glPushMatrix;
+                        
+                        moglDrawDots3D(ds.w, pursuitTargetCoords(1:3), 40, pa.red, [], 2);
+                        moglDrawDots3D(ds.w, pursuitTargetCoords(1:3), 36, pa.black, [], 2);
+                        glPopMatrix;
+                        
+                    elseif ds.real
+                        % undo head tracking's effect on environmental
+                        % coordinates (of fixation point only) if in real head rotation condition.
+                        % This will keep the fixation point in the line of
+                        % sight.
+                        fixationPos = inv(eye.modelView)*[fixationVertexPos, 1.0]';
+                        
+                        glPushMatrix;
+                        
+                        glTranslatef(xPosPursuit, 0, -zPosPursuit);
+                        moglDrawDots3D(ds.w, [xPosPursuit, 0, -zPosPursuit], 40, pa.red, [], 2);
+                        moglDrawDots3D(ds.w, [xPosPursuit, 0, -zPosPursuit], 36, pa.black, [], 2);
+                        glPopMatrix;
+                        
+                    elseif ds.stabilized
+                        
+                        fixationPos = inv(eye.modelView)*[fixationVertexPos, 1.0]'; % doesn't work. The eye.globalEyePoseMatrix does, however, it is a different rotation rate (it doesn't stay in the middle of the screen).
+                        
+                        %rotationMatrixYawHomo = [[rotationMatrixYaw; 0 0 0] [0 0 0 1]'];
+                        %fixationPos = inv(initialModelView) * inv(rotationMatrixYawHomo) * [fixationVertexPos, 1.0]';
+                        %fixationPos = fixationPos(1:3);
+                        
+                        %Translating the pursuit target
+                        glPushMatrix;
+                        
+                        glTranslatef(xPosPursuit, 0, -zPosPursuit);
+                        
+                        moglDrawDots3D(ds.w, [xPosPursuit, 0, -zPosPursuit], 40, pa.red, [], 2);
+                        moglDrawDots3D(ds.w, [xPosPursuit, 0, -zPosPursuit], 36, pa.black, [], 2);
+                        glPopMatrix;
+                        
+                    end
+                    
+                    
+                    moglDrawDots3D(ds.w, fixationPos, 25, [1 1 1 1], [], 2); %drawing horizontal fixation dot
+                    
+                    
+                    
+                    
+                elseif ~kb.responseGiven && ds.vbl >  pa.trialOnset + pa.targetMotionDuration && ds.vbl <=  pa.trialOnset + pa.targetMotionDuration + pa.itiLength  % show paddle and allow observers to adjust its position - no time constraints - they press the space bar to lock in their response and start a new trial
+                    
+                    pa.responseOnset = ds.vbl; % start the timer on the response time
+                    
+                    % Flip a coin to determine which of two staircases to use,
+                    % regardless of which rotation velocity you're using on
+                    % current trial
+                    
+                    if ~pa.stairCaseCodeRanAlready(1) % so just run staircase code ONCE per trial and then reset dummy vairable in setupNewTrial
+                        
+                        
+                        % flip a coin to determine which staircase you use
+                        for cc = 1:pa.numRotationVelocities % loop through rotation speeds
+                            if pa.RotationVel(pa.trialNumber) == cc
+                                if pa.coinFlip >= .5
+                                    pa.whichStairCase(pa.trialNumber) = 1;  %  use staircase 1 for this rotation velocity
+                                elseif pa.coinFlip < .5
+                                    pa.whichStairCase(pa.trialNumber) = 2;  %  use staircase 2 for this rotation velocity
+                                end
+                            end
+                        end
+                        
+                        
+                        currStaircase = pa.whichStairCase(pa.trialNumber);
+                        currVelocity = pa.RotationVel(pa.trialNumber);
+                        
+                        
+                        if pa.PosNegCoin >= 0.5
+                            pa.postPosDeg(pa.trialNumber) = pa.stairs(currVelocity,currStaircase).threshold; % Set the post position in degrees equal to the staircase determined by the if statements above.
+                        elseif pa.PosNegCoin < 0.5
+                            pa.postPosDeg(pa.trialNumber) = -pa.stairs(currVelocity,currStaircase).threshold; % Set the post position in degrees equal to the staircase determined by the if statements above. neg if number is less than .5
+                        end
+                        
+                        
+                        % Compute whether observer is heading left or right of the post in deg:
+                        if pa.postPosDeg(pa.trialNumber) < pa.heading(pa.trialNumber)
+                            pa.groundTruthLeftOrRight = 0; % left
+                        elseif pa.postPosDeg(pa.trialNumber) >= pa.heading(pa.trialNumber)
+                            pa.groundTruthLeftOrRight = 1; % right
+                        end
+                        
+                        % Drawing the post based on staircase
+                        postRadius = abs(pa.pursuitTargetDist); % The post distance from you = pursuit target distance from you = fixation distance from you in virtual environment
+                        postPosX = postRadius*sind(pa.postPosDeg(pa.trialNumber));
+                        postPosZ =  postRadius*cosd(pa.postPosDeg(pa.trialNumber));
+                        
+                        
+                        pa.stairCaseCodeRanAlready(1) = 1; % will only run this code in conditional once
+                    end
+                    
+                    glPushMatrix
+                    f = inv(eye.modelView);
+                    postCoords = f(1:3,1:3)*[postPosX , 0, -postPosZ]'; % does this do the right thing??? i'm just updating according to the head rotation info from beginning of frame... important to test explicitly somehow if the dot actually appears in a fixed straight ahead in world coords
+                    moglDrawDots3D(ds.w, postCoords, 50, [1 0 1 1], [], 2);
+                    glPopMatrix;
+                    
+                    [pa, kb] = GetResponse(pa, ds, kb);  % query the keyboard to allow the observer to rotate the paddle and eventually lock in his/her response to initiate a new trial
+                    
+                    pa.feedbackOnset = ds.vbl;
+                    
+                elseif kb.responseGiven && ds.vbl >  pa.trialOnset + pa.targetMotionDuration && ds.vbl <=  pa.trialOnset + pa.targetMotionDuration + pa.itiLength
+                    
+                    pa.leftRightResponse(pa.trialNumber) = kb.answer; % save out key press response of observer
+                    
+                    if ~pa.stairCaseCodeRanAlready(2) % will only run this code in conditional once
+                        
+                        
+                        
+                        if pa.groundTruthLeftOrRight == kb.answer % correct
+                            pa.correctness(pa.trialNumber) = 1;
+                        elseif pa.groundTruthLeftOrRight ~= kb.answer && kb.answer ~= -1
+                            pa.correctness(pa.trialNumber) = 0;
+                        elseif kb.answer == -1
+                            pa.correctness(pa.trialNumber) = NaN; % so NaN means no response or WRONG key (not left or right). do nothing to staircase in that case
+                        end
+                        
+                        pa.stairs(currVelocity,currStaircase) = upDownStaircase(pa.stairs(currVelocity,currStaircase),pa.correctness(pa.trialNumber));
+                        
+                        pa.stairCaseCodeRanAlready(2) = 1;
+                    end
+                    
+                    % play appropriate sound
+                    if ~pa.feedbackGiven == 1
+                        if pa.correctness(pa.trialNumber) == 1
+                            % PsychPortAudio('Start', pahandle [, repetitions=1] [, when=0] [, waitForStart=0] [, stopTime=inf] [, resume=0])
+                            PsychPortAudio('Start', pa.handleHit);
+                        elseif pa.correctness(pa.trialNumber) == 0
+                            PsychPortAudio('Start', pa.handleMiss);
+                        end
+                    end
+                    
+                    pa.feedbackGiven = 1;
+                    pa.waitTime = ds.vbl;
+                    pa.trialNumber
+                    
+                elseif kb.responseGiven && ds.vbl >  pa.trialOnset + pa.targetMotionDuration + pa.itiLength && ds.vbl <  pa.trialOnset + pa.targetMotionDuration + pa.itiLength + pa.recenterScreenLength
+                    
+                    glPushMatrix;
+                    recenteringDotCoords = headRotationAloneInfo(1:3,1:3)*[0, 0, -20]'; % does this do the right thing??? i'm just updating according to the head rotation info from beginning of frame... important to test explicitly somehow if the dot actually appears in a fixed straight ahead in world coords
+                    moglDrawDots3D(ds.w, recenteringDotCoords, 40, [1 0 0 1], [], 2);
+                    glPopMatrix;
+                    
+                    glPushMatrix;
+                    moglDrawDots3D(ds.w, fixationPos, 25, [1 1 1 1], [], 2); %drawing horizontal fixation dot
+                    glPopMatrix;
+                    
+                elseif kb.responseGiven && ds.vbl >= pa.trialOnset + pa.targetMotionDuration + pa.itiLength + pa.recenterScreenLength % when you''ve responded and it's the last frame of the trial, start new trial
+                    
+                    [ds, pa, kb, oc] = SetupNewTrial(ds, pa, kb, oc); % setup new trial
+                    
+                elseif ~kb.responseGiven && ds.vbl >  pa.trialOnset + pa.targetMotionDuration + pa.itiLength && ds.vbl <  pa.trialOnset + pa.targetMotionDuration + pa.itiLength + pa.recenterScreenLength
+                    
+                    glPushMatrix;
+                    recenteringDotCoords = headRotationAloneInfo(1:3,1:3)*[0, 0, -20]'; % does this do the right thing??? i'm just updating according to the head rotation info from beginning of frame... important to test explicitly somehow if the dot actually appears in a fixed straight ahead in world coords
+                    moglDrawDots3D(ds.w, recenteringDotCoords, 40, [1 0 0 1], [], 2);
+                    glPopMatrix;
+                    
+                    glPushMatrix;
+                    moglDrawDots3D(ds.w, fixationPos, 25, [1 1 1 1], [], 2); %drawing horizontal fixation dot
+                    glPopMatrix;
+                    
+                elseif ~kb.responseGiven && ds.vbl >= pa.trialOnset + pa.targetMotionDuration + pa.itiLength + pa.recenterScreenLength % when you've not responded and it's the last frame of the trial, start new trial
+                    
+                    [ds, pa, kb, oc] = SetupNewTrial(ds, pa, kb, oc); % setup new trial
+                    
+                end
+                
+                %{
+            if pa.trialNumber > 5
+                break;
+            end
+                %}
+                %% End of experiment logic
+                
+                % Update view with keyboard responses
+                %glPopMatrix; % reset back to the origin
+                %moglDrawDots3D(ds.w, [inf inf inf], 10, [1 1 1 1], [], 2); % 'hack' to fix transparency issue - same one we've used in all 3D pong experiments - definitely works!
+                
+                
+                %glBindTexture(GL.TEXTURE_2D,ds.wall_texid);
+                
+                if CROSSHAIRS
+                    glCallList(ds.surroundTexture); % 1/f noise texture surround -  comes from CreateTexturesforSDK2.m
+                end
+                
+                %glBindTexture(GL_TEXTURE_2D, 0);
+                
+                % Manually disable 3D mode before switching to other eye or to flip:
+                Screen('EndOpenGL', ds.w);
+                
+                if EXCLUSIONREGION
+                    Screen('FillRect', ds.w, pa.black, pa.centeredRect); % draw to screen
+                end
+                
+                % Compute simulation time for this draw cycle:
+                ds.tElapsed = (ds.vbl - tStart) * 1;
+                
+                % Repeat for renderPass of other eye
+            end
+        end
+        
+        if pa.trialNumber == 6
+            % keyboard
+        end
+        
+        % Head position tracked in the HMD?
+        if ~isempty(ds.hmd)
+            if ~bitand(state.tracked, 2) && ds.trackingFlag==1
+                % Nope, user out of cameras view frustum. Tell it like it is:
+                DrawFormattedText(ds.w, 'Vision based tracking lost\nGet back into the cameras field of view!', 'center', 'center', pa.red);
+            end
+        end
+        % Stimulus ready. Show it on the HMD. We don't clear the color buffer here,
+        % as this is done in the next iteration via glClear() call anyway:
+        Screen('DrawingFinished', ds.w);
+        
+        Screen('Flip', ds.w,[],[],1);%, [], [], 2);%, ds.vbl + (1-0.5) * ds.ifi);
+        ds.vbl = GetSecs();
+        ds.fCount = ds.fCount + 1;
+    end
+    
+    while pa.trialNumber == pa.nTrials && ~pa.readyToBeginRun % confirm everything's ready to go
+        % when you reach end of last trial
+        for renderPass = 0:1 % loop over eyes
+            ds.renderPass = renderPass;
+            Screen('SelectStereoDrawBuffer',ds.w,ds.renderPass);
+            Screen('BeginOpenGL',ds.w);
+            
+            % Setup camera position and orientation for this eyes view:
+            glMatrixMode(GL.PROJECTION)
+            glLoadMatrixd(ds.projMatrix{renderPass + 1});
+            
+            modelView = oc.initialState.modelView{ds.renderPass + 1}; % Use per-eye modelView matrices
+            
+            % N/A, redundant compared to modelView above. pa.modelViewSaveOutForFixed{ds.renderPass + 1} =  oc.initialState.modelView{ds.renderPass + 1};
+            
+            glLoadMatrixd(modelView);
+            
+            Screen('EndOpenGL', ds.w);
+            if renderPass == 0
+                %Screen('DrawText',ds.w,'TRIAL INFO/ CONDITION INFO',instructionsCenterxL,ds.textCoords(1)-50,[1 1 1]);
+                Screen('DrawText',ds.w,'Ready to continue the experiment?',instructionsCenterxL,ds.textCoords(1),[1 1 1]);
+                Screen('DrawText',ds.w,'Press SPACE to confirm.',instructionsCenterxL,ds.textCoords(1)+50,[1 1 1]);
+            elseif renderPass == 1
+                %Screen('DrawText',ds.w,'TRIAL INFO/ CONDITION INFO',instructionsCenterxR,ds.textCoords(1)-50,[1 1 1]);
+                Screen('DrawText',ds.w,'Ready to continue the experiment?',instructionsCenterxR,ds.textCoords(1),[1 1 1]);
+                Screen('DrawText',ds.w,'Press SPACE to confirm.',instructionsCenterxR,ds.textCoords(1)+50,[1 1 1]);
+            end
+        end
+        
+        Screen('DrawingFinished', ds.w);
+        ds.vbl = Screen('Flip', ds.w);
+        [kb.keyIsDown, kb.secs, kb.keyCode] = KbCheck(-1); % query the keyboard
+        if kb.keyIsDown && kb.keyCode(kb.spacebarKey)
+            pa.readyToBeginRun=1;
+            %keyboard
+            
+            % save out data before you setup new run
+            pa.dataFile = fullfile(pa.baseDir, 'Data', [pa.subjectName '-' ds.experimentType '-' pa.date '-' num2str(pa.runNumber) '.mat']);
+            save(pa.dataFile, 'pa', 'ds', 'kb','oc');
+            
+            
+            % rerun setup parameters to create new run's trial sequence of
+            % rotation velocities
+            [ds, pa, kb, oc] = SetupNewRun(ds, pa, kb, oc);
+        end
+        
+        
+        
+    end
+    
+    
+end
+
+% Calculate average framerate:
+fps = ds.fCount / (ds.vbl - tStart), % uncomment to print out at end of run
+% Done (or quit out). Save data (in pa.response) and other relevant parameters/variables, close screen and exit
+PsychVRHMD('SetAutoClose', ds.hmd, 2);
+PsychPortAudio('Close', pa.handleHit);
+PsychPortAudio('Close', pa.handleMiss);
+Priority(0);
+ShowCursor(ds.screenId);
+ListenChar(1); % Let's start listening to the keyboard again
+% sca;
+clear Screen

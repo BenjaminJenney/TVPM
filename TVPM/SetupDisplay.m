@@ -120,31 +120,34 @@ if ~isempty(ds.hmd) % CSB: if using hmd
         ds.hmdinfo = PsychVRHMD('GetInfo', ds.hmd); % query CV1 for params
         
         % Calculate display properties
-        ds.screenRenderWidthMonocular_px   = 1344; % the discrepancy btw. oculus's spec reported res of 1080 * 1200 is that the render resolution is higher than the screen res in order to make up for the barrel transform.
-        ds.screenRenderHeightMonocular_px  = 1600;
+        ds.screenRenderWidthMonocular_px   = 2*ds.xc; % the discrepancy btw. oculus's spec reported res of 1080 * 1200 is that the render resolution is higher than the screen res in order to make up for the barrel transform.
+        ds.screenRenderHeightMonocular_px  = 2*ds.yc;
         ds.screenWidthMonocular_px         = 1080; % this is what is reported in oculus's cv1 specs.
         ds.screenHeightMonocular_px        = 1200; % this is what is reported in oculus's cv1 specs.
         ds.screenWidthBinocular_px         = ds.screenWidthMonocular_px*2; % apparently just multiply by # of lens.
         ds.screenWidthBinocular_px         = ds.screenHeightMonocular_px*2; % apparently just multiply by # of lens.
-        
+        ds.hFOV = 80; % in deg - this is what is spit back from the Oculus readings at the start - horizontal field of view
+        ds.vFOV = 90;  % in deg - vertical field of view
         ds.hFOV_perPersonAvg   = 87; % based on averages taken from https://www.infinite.cz/blog/VR-Field-of-View-measured-explained   
         ds.hFOV_psych          = ds.hmdinfo.fovL(1) + ds.hmdinfo.fovL(2); % in deg - symmetric for fovL and fovR
         ds.vFOV_perPersonAvg   = 84; % based on averages taken from https://www.infinite.cz/blog/VR-Field-of-View-measured-explained   
-        ds.hFOV_psych          = ds.hmdinfo.fovL(3) + ds.hmdinfo.fovL(4); % in deg - vertical field of view
-        
+          ds.hFOV_psych          = ds.hmdinfo.fovL(3) + ds.hmdinfo.fovL(4); % in deg - vertical field of view 
         ds.screenX_deg = ds.hFOV_perPersonAvg;
         ds.screenY_deg = ds.vFOV_perPersonAvg;
-        ds.px_per_deg  = ds.screenRenderWidthMonocular_px/ds.screenX_deg; %~15.45 this seems pretty good check out: https://www.roadtovr.com/understanding-pixel-density-retinal-resolution-and-why-its-important-for-vr-and-ar-headsets/
-        ds.deg_per_px  = 1/ds.px_per_deg;
+        ds.viewportWidthDeg = ds.hFOV;
+        ds.viewportWidthM = .09;% height component of the display - corresponding to the longer side of the display
+        %ds.pixelsPerDegree = ds.screenRenderWidthMonocular_px  / ds.viewportWidthDeg;
+        ds.hor_px_per_deg  = (ds.screenRenderWidthMonocular_px*1)/ds.hFOV_perPersonAvg; %~15.45 this seems pretty good check out: https://www.roadtovr.com/understanding-pixel-density-retinal-resolution-and-why-its-important-for-vr-and-ar-headsets/
+        ds.ver_px_per_deg  = (ds.screenRenderHeightMonocular_px*1)/ds.vFOV_perPersonAvg*1;
+            ds.deg_per_px  = 1/ds.hor_px_per_deg;
         ds.focalLength = 1.2;
-        % ds.hFOV = 80; % in deg - this is what is spit back from the Oculus readings at the start - horizontal field of view
-        % ds.vFOV = 90;  % in deg - vertical field of view
-        % ds.dFOV = sqrt(ds.hFOV^2 + ds.vFOV^2);
-         ds.viewportWidthM = .09;% height component of the display - corresponding to the longer side of the display
+
+        ds.dFOV = sqrt(ds.hFOV^2 + ds.vFOV^2);
+         
          ds.metersPerDegree =  ds.viewportWidthM/ds.hFOV_perPersonAvg;
          ds.degreesPerM = ds.hFOV_perPersonAvg/ds.viewportWidthM;
-        % ds.viewportWidthDeg = ds.hFOV;
-        % ds.pixelsPerDegree = sqrt(RectHeight(ds.windowRect)^2 + RectWidth(ds.windowRect)^2) / ds.viewportWidthDeg;
+         
+         
          ds.pixelsPerM = sqrt(RectHeight(ds.windowRect)^2 + RectWidth(ds.windowRect)^2) / ds.viewportWidthM;
         
         % ds.frameRate = 90;
