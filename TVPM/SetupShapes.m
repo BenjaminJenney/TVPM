@@ -154,8 +154,8 @@ function shape = SetupShapes(ds, pa)
     black = BlackIndex(0);
 
     %{ Make a raised Cosine aperture for the "alpha" channel of the mask %}
-    gaussDim = pa.apertureDia_px; %100 px? TODO: DOES NOT SEEM TO CHANGE SIZE. 
-    gaussSigma = pa.apertureDia_px; %gaussDim /4; % csb: controls how big the apertures are
+%     gaussDim = pa.apertureDia_px; %100 px? TODO: DOES NOT SEEM TO CHANGE SIZE. 
+%     gaussSigma = pa.apertureDia_px; %gaussDim /4; % csb: controls how big the apertures are
     s1 = screenXpixels;
     s2 = screenYpixels;
     [xm, ym] = meshgrid(-(s2/2)+1:s2/2, -(s1/2)+1:s1/2); %%ben flipped this, originally it was meshgrid(-(s2/2)+1:s2/2, -(s1/2)+1:s1/2);
@@ -164,15 +164,13 @@ function shape = SetupShapes(ds, pa)
       for i = 1:shape.plane.numPlanes
         x_px = shape.disk.xpos_deg{i} .* ds.hor_px_per_deg;
         y_px = shape.disk.ypos_deg{i} .* ds.ver_px_per_deg;
-        
         for j = 1:shape.disk.numDisksPerPlane
-            raisedCos = min(raisedCos, sqrt((xm + y_px(j)).^2 + (ym + x_px(j)).^2) > pa.apertureDia_px);
+           % raisedCos = min(raisedCos, sqrt((xm + y_px(j)).^2 + (ym + x_px(j)).^2) > pa.apertureDia_px);
         end
       end
-     
-
-    
-    
+      % Create hole for fixation dot
+      raisedCos = min(raisedCos, sqrt((xm + 0).^2 + (ym + 0).^2) > pa.apertureDia_px);
+      figure; imagesc(raisedCos)
     %x_px(j)
     % to make a grid,uncomment:
 %     f = abs(cos(1/15.*[-s2/2:s2/2])).^8; f2 = f'*f
@@ -186,27 +184,28 @@ function shape = SetupShapes(ds, pa)
     bag = ones(s2, s1) .* black; % Ben flipped this originally it was:  ones(screenYpixels, screenXpixels) .* black;
     bag = repmat(bag,[ 1 1 3 ]);
     
-    %d_px = d_px * 4;
-    %Force Disparity LEFT EYE
+    % REMEMBER: d_px = d_px * 4; THIS IS A HACK
+    %Force Disparity Right Eye
     alphaMask        = ones(s1, s2, 1); % init alpha channel  TPB Standard 0:completely transluscent -- 255:completely opaque. 
-    alphaMask(:,:,1) = raisedCos.*125;%raisedCos; % Original Raised cosine calculation
+    alphaMask(:,:,1) = raisedCos;%raisedCos; % Original Raised cosine calculation
     
      alphaMask(:,:,1) = round(alphaMask(:,:,1),3,'significant');
     bagBeforeDisparity(:,:,4) = flipud(rot90(alphaMask(:,:,1),1));
     endCols          = alphaMask(round(abs(d_px)/2)+1:end,:,1);
-    alphaMask(:,:,1) = 125;
+    alphaMask(:,:,1) = 1;
     alphaMask(1:end - round(abs(d_px)/2),:,1) = endCols;
     bag(:,:,4)       = fliplr(flipud(alphaMask(:,:,1)'));
     shape.mask.fullWindowMaskLeftEye = Screen('MakeTexture', ds.w, bag);
     
-    %RIGHT EYE
-    alphaMask(:,:,1) = raisedCos.*125;%raisedCos; % restart Alpha with original raised cosine calc.
+    %Left Eye
+    alphaMask(:,:,1) = raisedCos;%raisedCos; % restart Alpha with original raised cosine calc.
     frontCols = alphaMask(1:end-round(abs(d_px)/2)+1,:,1); % Take the columns up to end (disparity shift)
-    alphaMask(:,:,1) = 125; % reset Alpha to completely opaque
+    alphaMask(:,:,1) = 1; % reset Alpha to completely opaque
     alphaMask(round(abs(d_px)/2):end,:,1) = frontCols; % paste to the end of the Alpha chanel
       bag(:,:,4) = fliplr(flipud(alphaMask(:,:,1)'));% circshift(mask(:,:,2)', 50,2);
      shape.mask.fullWindowMaskRightEye = Screen('MakeTexture', ds.w, bag);
-    
+     
+   figure; imagesc(bag(:,:,4))
     %% Masks for TVPM Full
     Screen('BeginOpenGL', ds.w);
     
@@ -235,21 +234,24 @@ function shape = SetupShapes(ds, pa)
     shape.mask.heights_m = maskHeights_m;
     
     for i = 1:shape.plane.numPlanes
+        
         blackTexData = zeros(maskTexHalfWidth*2, maskTexHalfHeight*2);
         blackTexData = repmat(blackTexData',[ 1 1 3 ]);
         blackTexData = permute(uint8(blackTexData),[ 3 2 1 ]);
-        for j = 1:shape.disk.numDisksPerPlane
-            opaque = min(opaque, sqrt((x + shape.disk.X_px{i}(j)).^2 + (y + shape.disk.Y_px{i}(j)).^2)>apertureSize_px);
-            
-        end
-        planeAlphas{i} = opaque; 
-            ithMaskVertices = [-maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
-                            maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
-                            maskWidths_m(i)/2  maskHeights_m(i)/2 maskDepths_m(i);...
-                           -maskWidths_m(i)/2  maskHeights_m(i)/2 maskDepths_m(i)]';
         
-        blackTexData(4,:,:) = shiftdim(125 .* opaque', -1);%
-         
+        x_px = shape.disk.X_px{i};
+        y_px = shape.disk.Y_px{i};
+        for j = 1:shape.disk.numDisksPerPlane
+            opaque = min(opaque, sqrt((x + x_px(j)).^2 + (y + y_px(j)).^2)>apertureSize_px);    
+        end
+        
+        %planeAlphas{i} = opaque; 
+        ithMaskVertices = [-maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
+                        maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
+                        maskWidths_m(i)/2  maskHeights_m(i)/2 maskDepths_m(i);...
+                       -maskWidths_m(i)/2  maskHeights_m(i)/2 maskDepths_m(i)]';
+        
+        blackTexData(4,:,:) = shiftdim(255 .* opaque', -1);%
         
         shape.mask.texture(i) = Texture(GL, type, 2*maskTexHalfWidth, 2*maskTexHalfHeight, uint8(blackTexData));
         shape.mask.listIds(i) = glGenLists(1);
@@ -320,8 +322,7 @@ function shape = SetupShapes(ds, pa)
     shape.disk.texture.id     = textureid;
     %shape.disk.texture.aptrId = textureid(2);
     
-    %left eye
 %     figure; imagesc(bagBeforeDisparity(:,:,4)); axis equal;
 %      planeAlpha = [planeAlphas{1} planeAlphas{2} planeAlphas{3}]'; 
 %      figure; imagesc(planeAlpha); axis equal;
-          end
+end

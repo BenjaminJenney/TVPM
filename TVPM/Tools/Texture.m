@@ -21,9 +21,8 @@ classdef Texture
            
            glBindTexture(type, self.id);
            
-           glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.CLAMP_TO_BORDER);
-           glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.CLAMP_TO_BORDER);
-           glTexParameterfv(type, GL.TEXTURE_BORDER_COLOR, [1.0, 0.0, 0.0, 1.0])
+           glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.REPEAT);
+           glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
            glTexParameterfv(type, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
            glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR);
            glTexImage2D(type, 0, GL.RGBA, width, height, 0, GL.RGBA, GL.UNSIGNED_BYTE, data);

@@ -44,6 +44,10 @@ function disk = diskPos(ds, disk, plane)
         disk.Y_px{i}  = (disk.ypos_deg{i} .* ds.ver_px_per_deg);
         disk.Xpx_m = (-1).*(2 .* Z(i).* tand((disk.xpos_deg{i} + (2-i)*hFOV/3)./2));
         
+        %%positions for holes in the full window mask
+        disk.Xfwm_px{i} = disk.xpos_deg{i} .* ds.hor_px_per_deg;
+        disk.Yfwm_px{i} = disk.ypos_deg{i} .* ds.ver_px_per_deg;
+        
         %%initial positions in the world
         disk.X_m{i}  =  2 .* -Z(i).* tand(xpos_deg./2); %ATTN(to CB): -depth * -angle was why the plaids were 'flipped'
         disk.Y_m{i}  = 2 .* Z(i).* tand(ypos_deg./2);   %QUESTION: Why do we not have to take negative depth in the Vertical direction?
@@ -55,7 +59,7 @@ function disk = diskPos(ds, disk, plane)
 %          shg
     end
 %     disk.diskPos_m = [cat(1, disk.X_m{:}), cat(1,disk.Y_m{:}), cat(1, disk.Z_m{:})];
-%     disk= load('disk.mat');
+%     disk = load('disk.mat');
 %     disk = disk.disk;
 % %     
  end
