@@ -72,36 +72,36 @@ switch ds.experimentType
         ds.real = 1;
         ds.simulated = 0;
         ds.stabilized = 0;
-        ds.tvpmfull = 0;
-        ds.tvpmplanes = 0;
+        ds.tvpmsd = 0;
+        ds.tvpmcd = 0;
     case {'simulated'}
         ds.trackingFlag = 1; % screen will update with head movements
         ds.real = 0;
         ds.simulated = 1;
         ds.stabilized = 0;
-        ds.tvpmfull = 0;
-        ds.tvpmplanes = 0;
+        ds.tvpmsd = 0;
+        ds.tvpmcd = 0;
     case ('stabilized')
         ds.trackingFlag = 0;
         ds.real = 0;
         ds.simulated = 1;
         ds.stabilized = 1;
-        ds.tvpmfull = 0;
-        ds.tvpmplanes = 0;
-    case ('tvpmfull')
+        ds.tvpmsd = 0;
+        ds.tvpmcd = 0;
+    case ('tvpmsd')
         ds.trackingFlag = 1;
-        ds.tvpmfull = 1;
+        ds.tvpmsd = 1;
         ds.stabalized = 0;
         ds.real = 0;
         ds.simulated = 0;
-        ds.tvpmplanes = 0;
-    case ('tvpmplanes')
+        ds.tvpmcd = 0;
+    case ('tvpmcd')
         ds.trackingFlag = 1;
-        ds.tvpmfull = 0;
+        ds.tvpmsd = 0;
         ds.stabalized = 0;
         ds.real = 0;
         ds.simulated = 0;
-        ds.tvpmplanes = 1;
+        ds.tvpmcd = 1;
 end
 
 

@@ -218,7 +218,7 @@ function shape = SetupShapes(ds, pa)
     maskTexHalfWidth  = floor(shape.plane.TextureWidth_px/2);
     maskTexHalfHeight = floor(shape.plane.TextureHeight_px/2);
     
-    apertureSize_px = pa.apertureDia_px;
+    
     [x,y]  = meshgrid(-maskTexHalfWidth+1:maskTexHalfWidth, -maskTexHalfHeight+1:maskTexHalfHeight);
     opaque = ones(size(x));
     maskWidths_m  = zeros(1, shape.plane.numPlanes);
@@ -241,7 +241,7 @@ function shape = SetupShapes(ds, pa)
         x_px = shape.disk.X_px{i};
         y_px = shape.disk.Y_px{i};
         for j = 1:shape.disk.numDisksPerPlane
-            opaque = min(opaque, sqrt((x + x_px(j)).^2 + (y + y_px(j)).^2)>apertureSize_px);    
+            opaque = min(opaque, sqrt((x + x_px(j)).^2 + (y + y_px(j)).^2)>pa.apertureDia_px);    
         end
         
         %planeAlphas{i} = opaque; 

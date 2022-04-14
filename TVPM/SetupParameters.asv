@@ -159,5 +159,5 @@ pa.quitFlag = 0; % don't give up
 
 %% Params for TVPM-FULL and TVPM-PLANES+MASK
 pa.sf = 2;
-pa.apertureDia_px = floor(1 * ds.hor_px_per_deg); % Size of the holes for both TVPMSD and TVPMCD. 
+pa.apertureDia_px = floor(1.5 * ds.hor_px_per_deg); % Size of the holes for both TVPMSD and TVPMCD 23 px. 
         end
