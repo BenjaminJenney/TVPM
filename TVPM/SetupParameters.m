@@ -89,6 +89,7 @@ end
 
 % setup rotation velocity, translation velocity, and heading directions
 pa.transSpeed = .5;%.5; % m/s
+pa.transSpeedTraining = 5; %m/s
 %transpeed and planedepth get multiplied by eachother.
 if pa.TRAINING ==1
     pa.rotationVelocities = 0; % deg/s.  if training, use no rotation only
@@ -156,5 +157,5 @@ pa.quitFlag = 0; % don't give up
 
 %% Params for TVPM-FULL and TVPM-PLANES+MASK
 pa.sf = 2;
-pa.apertureDia_px = 20;
-end
+pa.apertureDia_px = floor(1.5 * ds.hor_px_per_deg); % Size of the holes for both TVPMSD and TVPMCD 23 px. 
+   end

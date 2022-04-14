@@ -165,12 +165,12 @@ function shape = SetupShapes(ds, pa)
         x_px = shape.disk.xpos_deg{i} .* ds.hor_px_per_deg;
         y_px = shape.disk.ypos_deg{i} .* ds.ver_px_per_deg;
         for j = 1:shape.disk.numDisksPerPlane
-           % raisedCos = min(raisedCos, sqrt((xm + y_px(j)).^2 + (ym + x_px(j)).^2) > pa.apertureDia_px);
+            raisedCos = min(raisedCos, sqrt((xm + y_px(j)).^2 + (ym + x_px(j)).^2) > pa.apertureDia_px);
         end
       end
       % Create hole for fixation dot
-      raisedCos = min(raisedCos, sqrt((xm + 0).^2 + (ym + 0).^2) > pa.apertureDia_px);
-      figure; imagesc(raisedCos)
+%       raisedCos = min(raisedCos, sqrt((xm + 0).^2 + (ym + 0).^2) > pa.apertureDia_px);
+%       figure; imagesc(raisedCos)
     %x_px(j)
     % to make a grid,uncomment:
 %     f = abs(cos(1/15.*[-s2/2:s2/2])).^8; f2 = f'*f
@@ -190,7 +190,7 @@ function shape = SetupShapes(ds, pa)
     alphaMask(:,:,1) = raisedCos;%raisedCos; % Original Raised cosine calculation
     
      alphaMask(:,:,1) = round(alphaMask(:,:,1),3,'significant');
-    bagBeforeDisparity(:,:,4) = flipud(rot90(alphaMask(:,:,1),1));
+    %bagBeforeDisparity(:,:,4) = flipud(rot90(alphaMask(:,:,1),1));
     endCols          = alphaMask(round(abs(d_px)/2)+1:end,:,1);
     alphaMask(:,:,1) = 1;
     alphaMask(1:end - round(abs(d_px)/2),:,1) = endCols;
@@ -205,7 +205,6 @@ function shape = SetupShapes(ds, pa)
       bag(:,:,4) = fliplr(flipud(alphaMask(:,:,1)'));% circshift(mask(:,:,2)', 50,2);
      shape.mask.fullWindowMaskRightEye = Screen('MakeTexture', ds.w, bag);
      
-   figure; imagesc(bag(:,:,4))
     %% Masks for TVPM Full
     Screen('BeginOpenGL', ds.w);
     
