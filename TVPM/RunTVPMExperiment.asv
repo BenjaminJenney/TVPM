@@ -148,8 +148,8 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     posZ{i} = ones(size(posX{i})) .* shape.plane.depths_m(i);
                     %disp(pa.trialNumber);
                 end
-            end   
-            if ds.tvpmsd
+                
+            else
                 % KEEP THIS BLOCK
                                 for i = 1:shape.plane.numPlanes
                                     posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
