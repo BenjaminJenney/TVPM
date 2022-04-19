@@ -143,93 +143,68 @@ function shape = SetupShapes(ds, pa)
     % depth and can be expressed with only 2 dimensions.
     
     
-    %{ Force disparity of the Full Window Mask to match the disparity of the middle plane %}
+   %{ Force disparity of the Full Window Mask to match the disparity of the middle plane %}
     b = .067; % inter-pupillary distance in meters TODO: Figure out if there is a way to get IP from the headset instead of hardcoding.
-    Z2 = abs(shape.plane.depths_m(2)); % depth of middle plane.
-    Z1 = abs(shape.plane.depths_m(1)); % depth of middle plane.
-    Z3 = abs(shape.plane.depths_m(3)); % depth of middle plane.
-    keyboard
-    d_deg_closemask = -2.*( atand((b./2)./(2.*Z2)) - atand((b./2)./(2.*Z1)) );
-    d_px_closemask  = d_deg_closemask*ds.hor_px_per_deg;
-    d_deg_farmask = -2.*( atand((b./2)./(2.*Z2)) - atand((b./2)./(2.*Z3)) ); 
-    d_px_farmask  = d_deg_farmask*ds.hor_px_per_deg;
-    
+    Z = abs(shape.plane.depths_m(2)); % depth of middle plane.
+    d_deg = -2.*( atand((b./2)./(2.*Z)) - atand((-b./2)./(2.*Z)) ); % Should fix disparity of the mask.
+    d_px  = abs(d_deg*ds.hor_px_per_deg);
+    d_px = 4*d_px;  %ATTN: THIS IS WRONG AND NEEDS TO BE FIXED
     screenXpixels = ds.screenRenderWidthMonocular_px;
     screenYpixels = ds.screenRenderHeightMonocular_px;
     black = BlackIndex(0);
-    
+
     %{ Make a raised Cosine aperture for the "alpha" channel of the mask %}
-    %     gaussDim = pa.apertureDia_px; %100 px? TODO: DOES NOT SEEM TO CHANGE SIZE.
-    %     gaussSigma = pa.apertureDia_px; %gaussDim /4; % csb: controls how big the apertures are
+%     gaussDim = pa.apertureDia_px; %100 px? TODO: DOES NOT SEEM TO CHANGE SIZE. 
+%     gaussSigma = pa.apertureDia_px; %gaussDim /4; % csb: controls how big the apertures are
     s1 = screenXpixels;
     s2 = screenYpixels;
     [xm, ym] = meshgrid(-(s2/2)+1:s2/2, -(s1/2)+1:s1/2); %%ben flipped this, originally it was meshgrid(-(s2/2)+1:s2/2, -(s1/2)+1:s1/2);
     raisedCos = ones(size(xm));
     
-    for i = 1:shape.plane.numPlanes
+      for i = 1:shape.plane.numPlanes
         x_px = shape.disk.xpos_deg{i} .* ds.hor_px_per_deg;
         y_px = shape.disk.ypos_deg{i} .* ds.ver_px_per_deg;
         for j = 1:shape.disk.numDisksPerPlane
             raisedCos = min(raisedCos, sqrt((xm + y_px(j)).^2 + (ym + x_px(j)).^2) > pa.apertureDia_px);
         end
-    end
-    raisedCos = raisedCos.*150;
-    % Create hole for fixation dot
-    %       raisedCos = min(raisedCos, sqrt((xm + 0).^2 + (ym + 0).^2) > pa.apertureDia_px);
-    %       figure; imagesc(raisedCos)
+      end
+      % Create hole for fixation dot
+%       raisedCos = min(raisedCos, sqrt((xm + 0).^2 + (ym + 0).^2) > pa.apertureDia_px);
+%       figure; imagesc(raisedCos)
     %x_px(j)
     % to make a grid,uncomment:
-    %     f = abs(cos(1/15.*[-s2/2:s2/2])).^8; f2 = f'*f
-    %      raisedCos = f2(1:s1,1:s2);
-    %     fixationHole_px = 15 ;
-    %     raisedCos = 1-raisedCos;
+%     f = abs(cos(1/15.*[-s2/2:s2/2])).^8; f2 = f'*f
+%      raisedCos = f2(1:s1,1:s2);
+%     fixationHole_px = 15 ;
+%     raisedCos = 1-raisedCos;
+
+
     
-    
-    
-    % break full-screen mask into 3 sections corresponding to planes
-    plane1mask = raisedCos(1:s1/3,:);
-    plane2mask = raisedCos(1+ s1/3:2*s1/3,:);
-    plane3mask = raisedCos(1+ 2*s1/3:end,:);
-    
-    % right eye
-    plane1maskr = round(plane1mask,3,'significant');
-    endCols     = plane1maskr(round(abs(d_px_closemask)/2)+1:end,:,1);
-    plane1maskr = ones(size(plane1maskr,1),size(plane1maskr,2));
-    plane1maskr(1:end - round(abs(d_px_closemask)/2),:,1) = endCols;
-    
-    plane3maskr = round(plane3mask,3,'significant');
-    frontCols   = plane3maskr(1:end-round(abs(d_px_farmask)/2)+1,:,1); % Take the columns up to end (disparity shift)
-    plane3maskr = ones(size(plane3maskr,1),size(plane3maskr,2));
-    plane3maskr(round(abs(d_px_farmask)/2):end,:,1) = frontCols; % paste to the end of the Alpha chanel
-    
-    % left eye
-    plane3maskl = round(plane3mask,3,'significant');
-    endCols     = plane3maskl(round(abs(d_px_farmask)/2)+1:end,:,1);
-    plane3maskl = ones(size(plane3maskl,1),size(plane3maskl,2));
-    plane3maskl(1:end - round(abs(d_px_farmask)/2),:,1) = endCols;
-    
-    plane1maskl = round(plane1mask,3,'significant');
-    frontCols = plane1maskl(1:end-round(abs(d_px_closemask)/2)+1,:,1); % Take the columns up to end (disparity shift)
-    plane1maskl = ones(size(plane1maskl,1),size(plane1maskl,2));
-    plane1maskl(round(abs(d_px_closemask)/2):end,:,1) = frontCols; % paste to the end of the Alpha chanel
-    
-    
-    % now concatenate the 3 sections to make the full screen mask
-    maskLeftEye  = [plane1maskl; plane2mask; plane3maskl];
-    maskRightEye = [plane1maskr; plane2mask; plane3maskr];
-     
     %{ Create texture image data for Full Window Mask %}
     bag = ones(s2, s1) .* black; % Ben flipped this originally it was:  ones(screenYpixels, screenXpixels) .* black;
     bag = repmat(bag,[ 1 1 3 ]);
     
-    %Right Eye
-    bag(:,:,4)       = fliplr(flipud(maskRightEye'));
-    shape.mask.fullWindowMaskRightEye = Screen('MakeTexture', ds.w, bag);
+    % REMEMBER: d_px = d_px * 4; THIS IS A HACK
+    %Force Disparity Right Eye
+    alphaMask        = ones(s1, s2, 1); % init alpha channel  TPB Standard 0:completely transluscent -- 255:completely opaque. 
+    alphaMask(:,:,1) = raisedCos;%raisedCos; % Original Raised cosine calculation
     
-    %Left Eye
-    bag(:,:,4)       = fliplr(flipud(maskLeftEye'));
+     alphaMask(:,:,1) = round(alphaMask(:,:,1),3,'significant');
+    %bagBeforeDisparity(:,:,4) = flipud(rot90(alphaMask(:,:,1),1));
+    endCols          = alphaMask(round(abs(d_px)/2)+1:end,:,1);
+    alphaMask(:,:,1) = 1;
+    alphaMask(1:end - round(abs(d_px)/2),:,1) = endCols;
+    bag(:,:,4)       = fliplr(flipud(alphaMask(:,:,1)'));
     shape.mask.fullWindowMaskLeftEye = Screen('MakeTexture', ds.w, bag);
     
+    %Left Eye
+    alphaMask(:,:,1) = raisedCos;%raisedCos; % restart Alpha with original raised cosine calc.
+    frontCols = alphaMask(1:end-round(abs(d_px)/2)+1,:,1); % Take the columns up to end (disparity shift)
+    alphaMask(:,:,1) = 1; % reset Alpha to completely opaque
+    alphaMask(round(abs(d_px)/2):end,:,1) = frontCols; % paste to the end of the Alpha chanel
+      bag(:,:,4) = fliplr(flipud(alphaMask(:,:,1)'));% circshift(mask(:,:,2)', 50,2);
+     shape.mask.fullWindowMaskRightEye = Screen('MakeTexture', ds.w, bag);
+     
     %% Masks for TVPM Full
     Screen('BeginOpenGL', ds.w);
     

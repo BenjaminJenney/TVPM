@@ -368,32 +368,24 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         moglDrawDots3D(ds.w, inv(curModelViewNoTranslation2)*[[0 0 shape.plane.depths_m(2)], 1.0]', pa.fixationDiameter, [], [], 2); %drawing horizontal fixation dot
                         glPopMatrix;
                         
-                        glEnable(GL.POINT_SPRITE);
-                        for i = 1:shape.plane.numPlanes
-                            glBindTexture(type, shape.disk.texture.id)
-                            moglDrawDots3D(ds.w, [posX{i}, posY{i}, shape.disk.Z_m{i}]', shape.disk.size_px, [], [], 0);
-                            glBindTexture(type, 0);
-                        end
-                        glDisable(GL.POINT_SPRITE);
-                        
                         % Draw the 3 plaid planes
-%                         glPushMatrix;
-%                         glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
-%                         gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
-%                         glCallList(shape.plane.listIds(1));
-%                         glPopMatrix;
-%                         
-%                         glPushMatrix;
-%                         glTranslatef(0.0, 0.0, 0.0);
-%                         gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
-%                         glCallList(shape.plane.listIds(2));
-%                         glPopMatrix;
-%                         
-%                         glPushMatrix;
-%                         glTranslatef(shape.plane.widths_m(3), 0.0, 0.0);
-%                         gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
-%                         glCallList(shape.plane.listIds(3));
-%                         glPopMatrix;
+                        glPushMatrix;
+                        glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
+                        gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
+                        glCallList(shape.plane.listIds(1));
+                        glPopMatrix;
+                        
+                        glPushMatrix;
+                        glTranslatef(0.0, 0.0, 0.0);
+                        gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
+                        glCallList(shape.plane.listIds(2));
+                        glPopMatrix;
+                        
+                        glPushMatrix;
+                        glTranslatef(shape.plane.widths_m(3), 0.0, 0.0);
+                        gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
+                        glCallList(shape.plane.listIds(3));
+                        glPopMatrix;
                         
                         % Draw the full screen mask aka 'The holey bag'
                         if renderPass == 0
