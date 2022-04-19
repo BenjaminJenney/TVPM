@@ -324,4 +324,11 @@ function shape = SetupShapes(ds, pa)
 %     figure; imagesc(bagBeforeDisparity(:,:,4)); axis equal;
 %      planeAlpha = [planeAlphas{1} planeAlphas{2} planeAlphas{3}]'; 
 %      figure; imagesc(planeAlpha); axis equal;
+
+
+% make phase modulation limits in m for each plane
+for ii =1:shape.plane.numPlanes
+    shape.cyc_m(ii) =  2*-depths_m(ii)*tand((1/pa.sf)/2);
+end
+    
 end

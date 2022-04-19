@@ -148,13 +148,18 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     posZ{i} = ones(size(posX{i})) .* shape.plane.depths_m(i);
                     %disp(pa.trialNumber);
                 end
-                
-            else
+            end   
+            if ds.tvpmsd
                 % KEEP THIS BLOCK
                                 for i = 1:shape.plane.numPlanes
-                                    posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
-                                    posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
-                
+                                    %posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
+                                    %posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
+                                    
+                                    % attempt at modulation
+                                     for jj = 1:length(posX{i}) % number of plaids
+                                         displacements{i}(jj)
+                                     end
+                                     
                                 end
                 ds.fCount;
                 

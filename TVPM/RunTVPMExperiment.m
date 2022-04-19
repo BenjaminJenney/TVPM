@@ -135,7 +135,7 @@ rotationMatrixYawHomo = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]; % initialize for s
 
 while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
         if ds.tvpmsd
-            [vXw, vYw, shape] = Preprocess(ds, pa, shape, GL);% m/f in world coords
+            %[vXw, vYw, shape] = Preprocess(ds, pa, shape, GL);% m/f in world coords
         end
     while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
         ds.fCount = ds.fCount + 1; % frame count
@@ -148,15 +148,31 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     posZ{i} = ones(size(posX{i})) .* shape.plane.depths_m(i);
                     %disp(pa.trialNumber);
                 end
-            end   
+            end
             if ds.tvpmsd
                 % KEEP THIS BLOCK
-                                for i = 1:shape.plane.numPlanes
-                                    posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
-                                    posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
-                
-                                end
-                ds.fCount;
+                for i = 1:shape.plane.numPlanes
+                    %posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
+                    %posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
+                    
+                    %{
+                    % attempt at modulation
+                    displacementsX{i} = abs(shape.disk.X_m{i}-posX{i});
+                    displacementsY{i} = abs(shape.disk.Y_m{i}-posY{i});
+                    
+                    for jj = 1:length(posX{i})
+                        if displacementsX{i}(jj) >= shape.cyc_m(i)
+                            posX{i}(jj) = shape.disk.X_m{i}(jj);
+                        end
+                        
+                        if displacementsY{i}(jj) >= shape.cyc_m(i)
+                            posY{i}(jj) = shape.disk.Y_m{i}(jj);
+                        end
+                    end
+                    %}
+                   
+                end
+                %ds.fCount;
                 
             end
         end
