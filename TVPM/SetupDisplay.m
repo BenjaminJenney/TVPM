@@ -25,9 +25,20 @@ if ds.oculusConnected==1
     load('DefaultHMDParameters.mat');
     oc.defaultState = defaultState;
     
+%     Return matrices for left and right “eye cameras” which can be directly
+% used as OpenGL GL_MODELVIEW matrices for rendering the scene. 4x4 matrices
+% for left- and right eye are contained in state.modelView{1} and {2}.
     % as of the PTB release for the CV1, there is built-in gamma correction
     % in Psychtoolbox for the devices
-    
+    ds.defaultIPD = 0.064; % in m
+    ds.viewingDistance = .45;
+    defaultState.modelViewDataLeft = [1 0 0 -ds.defaultIPD/2; 0 1 0 0; 0 0 1 -ds.viewingDistance; 0 0 0 1]; %+/- IPD/2
+    defaultState.modelViewDataRight = [1 0 0 ds.defaultIPD/2; 0 1 0 0; 0 0 1 -ds.viewingDistance; 0 0 0 1];
+    oc.defaultState.modelView = {defaultState.modelViewDataLeft, defaultState.modelViewDataRight};
+    oc.defaultState.modelView{1}(13) = ds.defaultIPD/2;
+    oc.defaultState.modelView{1}(15) = -ds.viewingDistance;
+    oc.defaultState.modelView{2}(13) = -ds.defaultIPD/2;
+    oc.defaultState.modelView{2}(15) = -ds.viewingDistance;
     %     load OculusDK2Gamma.mat; % load the oculus gamma table
     % for gamma correction
     %     ds.gammaVals = [GammaValue GammaValue GammaValue];

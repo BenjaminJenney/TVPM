@@ -92,7 +92,7 @@ while ~readyToBegin % confirm everything's ready to go
             glMatrixMode(GL.PROJECTION)
             glLoadMatrixd(ds.projMatrix{renderPass + 1});
             
-            modelView = oc.initialState.modelView{ds.renderPass + 1}; % Use per-eye modelView matrices
+            modelView = oc.defaultState.modelView{ds.renderPass + 1}; % SET BACK to initialState.modelView for normal camera Use per-eye modelView matrices
             
             % N/A, redundant compared to modelView above. pa.modelViewSaveOutForFixed{ds.renderPass + 1} =  oc.initialState.modelView{ds.renderPass + 1};
             glMatrixMode(GL.MODELVIEW)
@@ -242,8 +242,12 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 if ds.simulated
                     modelView = rotationMatrixYawHomo*eye.modelView;
                 else
-                    modelView = eye.modelView; % Extract modelView matrix for this eye:
+                    % Force camera for each eye using modelView specified
+                    % by Bas. Change back to eye.modelView non-fixed normal
+                    % camera behavior
+                    modelView = oc.defaultState.modelView{renderPass+1};%eye.modelView; % Extract modelView matrix for this eye:
                 end
+                
                 
                 Screen('BeginOpenGL', ds.w); % Manually reenable 3D mode in preparation of eye draw cycle
                 
