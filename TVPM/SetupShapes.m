@@ -135,15 +135,6 @@ function shape = SetupShapes(ds, pa)
         glTexImage2D(type, 0, GL.RGB, shape.disk.texture.width, shape.disk.texture.width, 0, GL.RGB, GL.UNSIGNED_BYTE, uint8(plaidData));
         glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
     glBindTexture(type,0);
-    for i = 1:numPlanes
-        diskWidths_m(i)  = 2 * -depths_m(i) * tand(shape.disk.size_deg/2);
-        diskHeights_m(i) = (2 * -depths_m(i) * tand(shape.disk.size_deg/2));
-    end
-    diskNumVertices = 4;
-    diskCorners = [0 0;
-        1 0;
-        1 1;
-        0 1];
    Screen('EndOpenGL', ds.w);
    
     %% Full Window Mask
