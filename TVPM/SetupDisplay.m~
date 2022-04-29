@@ -72,13 +72,10 @@ else % Oculus not connected
     if ds.screenId % more than one screen connected, run fullscreen
         ds.winRect = [];
     else
-        ds.winRect = [0,0, 1792, 1120];
+        ds.winRect = [0 0 1792/2 1120/2];
     end
-      %PsychImaging('AddTask', 'General', 'UseRetinaResolution');
     [ds.w, ds.windowRect] = PsychImaging('OpenWindow', ds.screenId, 0, ds.winRect, [], [], 4, ds.multiSample);  % CSB. split screen mode; "4" sets this
-  
 end
-ds.windowRect
 %
 % if ~DEBUG_FLAG
 %     PsychColorCorrection('SetEncodingGamma', ds.w, 1./ds.gammaVals); % set required gamma
@@ -190,47 +187,41 @@ if ~isempty(ds.hmd) % CSB: if using hmd
     end
 else % No hmd
     % CSB: screen params for default monitor, "whistler"
-%     ds.viewingDistance = 2.8; % CSB: viewing dist in m. for Heeger lab computer "whistler."
-%     ds.xyM = [.5 .31]; % width x height of "whistler" display in m.
-%     ds.xyPix = [RectWidth(ds.windowRect) RectHeight(ds.windowRect)]; % width by height of "whistler" display in pixels
-%     ds.xyDva = 2*atand(ds.xyM./(2.*ds.viewingDistance)); %  width by height of "whistler" display in degrees of visual angle
-%     ds.hFOV = ds.xyDva(1);  % in deg - horizontal field of view. % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
-%     ds.vFOV = ds.xyDva(2);  % in deg - vertical field of view. % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
-%     ds.viewportWidthM = ds.xyM(1);  % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
-% 
-%     ds.dFOV = sqrt(ds.xyDva(1).^2 + ds.xyDva(2).^2);
-% 
-%     ds.Height = 1.7614; % virtual height of the surround texture in meters, based on viewing distance - we want this to relate to the shorter dimension of the display
-%     ds.halfHeight = ds.Height/2;
-%     ds.Width = 1.7614; % virtual width of the surround texture in meters, based on viewing distance - we want this to relate to the longer dimension of the display
-%     ds.halfWidth = ds.Width/2;
-% 
-%     ds.xyc = ds.xyPix./2; % the horizontal and vertical centers of the display in pixels
-%     ds.xc = ds.xyc(1); % the horizontal center of the display in pixels % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
-%     ds.yc = ds.xyc(2); % the vertical center of the display in pixels % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
-%     ds.textCoords = [ds.xc ds.yc];
-% 
-%     ds.metersPerDegree =  ds.viewportWidthM/ds.hFOV;
-%     ds.viewportWidthDeg = ds.hFOV;
+    ds.viewingDistance = 2.8; % CSB: viewing dist in m. for Heeger lab computer "whistler."
+    ds.xyM = [.5 .31]; % width x height of "whistler" display in m.
+    ds.xyPix = [RectWidth(ds.windowRect) RectHeight(ds.windowRect)]; % width by height of "whistler" display in pixels
+    ds.xyDva = 2*atand(ds.xyM./(2.*ds.viewingDistance)); %  width by height of "whistler" display in degrees of visual angle
+    ds.hFOV = ds.xyDva(1);  % in deg - horizontal field of view. % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
+    ds.vFOV = ds.xyDva(2);  % in deg - vertical field of view. % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
+    ds.viewportWidthM = ds.xyM(1);  % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
 
-%     ds.pixelsPerDegree = sqrt(ds.xyPix(1).^2 + ds.xyPix(2).^2) ./ ds.xyDva(1);
-%     ds.pixelsPerM = sqrt(ds.xyPix(1).^2 + ds.xyPix(2).^2) ./ ds.xyM(1) ;
+    ds.dFOV = sqrt(ds.xyDva(1).^2 + ds.xyDva(2).^2);
+
+    ds.Height = 1.7614; % virtual height of the surround texture in meters, based on viewing distance - we want this to relate to the shorter dimension of the display
+    ds.halfHeight = ds.Height/2;
+    ds.Width = 1.7614; % virtual width of the surround texture in meters, based on viewing distance - we want this to relate to the longer dimension of the display
+    ds.halfWidth = ds.Width/2;
+
+    ds.xyc = ds.xyPix./2; % the horizontal and vertical centers of the display in pixels
+    ds.xc = ds.xyc(1); % the horizontal center of the display in pixels % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
+    ds.yc = ds.xyc(2); % the vertical center of the display in pixels % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
+    ds.textCoords = [ds.xc ds.yc];
+
+    ds.metersPerDegree =  ds.viewportWidthM/ds.hFOV;
+    ds.viewportWidthDeg = ds.hFOV;
+
+    ds.pixelsPerDegree = sqrt(ds.xyPix(1).^2 + ds.xyPix(2).^2) ./ ds.xyDva(1);
+    ds.pixelsPerM = sqrt(ds.xyPix(1).^2 + ds.xyPix(2).^2) ./ ds.xyM(1) ;
 
     % BR DEBUG - getting some not-defined errors
 
-%     ds.hFOV_perPersonAvg = 28; %deg
-%     ds.vFOV_perPersonAvg = 18.5; %deg
-    ds.hFOV_perPersonAvg = 87; %deg
-    ds.vFOV_perPersonAvg = 84; %deg
-    ds.screenRenderWidthMonocular_px = 1792;
-    ds.screenRenderHeightMonocular_px = 1120;
+    ds.hFOV_perPersonAvg = 80;
+    ds.vFOV_perPersonAvg = 90;
+    ds.screenRenderWidthMonocular_px = 1792/2;
+    ds.screenRenderHeightMonocular_px = 1120/2;
     ds.hor_px_per_deg = ds.screenRenderWidthMonocular_px/ds.hFOV_perPersonAvg; %
     ds.ver_px_per_deg = ds.screenRenderHeightMonocular_px/ds.vFOV_perPersonAvg;
     ds.deg_per_px = 1/ds.hor_px_per_deg;
-    
-    ds.pixelsPerM = 1792/0.2159;
-    
-    ds.textCoords = [ds.screenRenderWidthMonocular_px/2 ds.screenRenderHeightMonocular_px/2];
 
 end
 

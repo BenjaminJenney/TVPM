@@ -25,8 +25,8 @@ RandStream.setGlobalStream(s); % sets the stream according to the state
 defaultStream = RandStream.getGlobalStream; % for 64-bit; getCurrentStream for old 32-bit
 pa.savedState = defaultStream.State; %% these two lines allow us to recover the subject's experience
 pa.baseDir = pwd;
-pa.Desktop =  extractBefore(pwd,'\Optic-Flow-Stereo');
-pa.Desktop = [pa.Desktop '\'];
+%pa.Desktop =  extractBefore(pwd,'\Optic-Flow-Stereo');
+%pa.Desktop = [pa.Desktop '\'];
 
 
 %% Parameters of all visual objects - stimulus, targets, etc.
@@ -60,7 +60,7 @@ pa.fixationVertexPos = [0 0 pa.fixationDist];
 
 pa.stimulusDuration_sec = 5.8; % seconds
 pa.nFrames = 90 * pa.stimulusDuration_sec; % NEED TO FIX: 80 fps is by no means exact.
-pa.viewingDistance_m = .05; % CHECK WITH DAVID: this is almost certainly incorrect. Is traditional viewing distance meaningful in vr? If so are we interested in distance to OLED's or lens'?
+pa.viewingDistance_m = 0; % CHECK WITH DAVID: this is almost certainly incorrect. Is traditional viewing distance meaningful in vr? If so are we interested in distance to OLED's or lens'?
 pa.dty = 0; % dtx and dty are accumulators inside the render loop for the phase change of the animated plaids.
 pa.dtx = 0;
 %% experimental structure/design
