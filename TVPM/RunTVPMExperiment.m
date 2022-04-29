@@ -43,7 +43,7 @@ AUDIO = 1; % to override and have feedback even when you're not training
 
 if DEBUG_FLAG == 1
     %Screen('Preference', 'SkipSyncTests', 1); % For debugging, old
-    PsychDebugWindowConfiguration([],.4); % display on monitor at half opacity in addition to in the HMD
+    PsychDebugWindowConfiguration([],1); % display on monitor at half opacity in addition to in the HMD
 end
 
 %% Setup Psychtoolbox for OpenGL 3D rendering support
@@ -76,7 +76,7 @@ while ~readyToBegin % confirm everything's ready to go
     
     if isempty(ds.hmd) % Oculus not connected
         load DefaultHMDParameters.mat;
-        oc.defaultState = defaultState;
+        % oc.defaultState = defaultState;
         oc.initialState = defaultState.initialState;
     else % Oculus connected
         oc.initialState = PsychVRHMD('PrepareRender', ds.hmd, ds.globalHeadPose);  % get the state of the hmd now

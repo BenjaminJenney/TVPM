@@ -52,8 +52,8 @@ else % oculus not connected
     load('DefaultHMDParameters.mat');
     oc.defaultState = defaultState;
 
-    ds.defaultIPD = 0.064; % in m
-    ds.viewingDistance = 0.45;
+    ds.defaultIPD = 0; %0.064; % in m
+    ds.viewingDistance = 0; %.45;
     defaultState.modelViewDataLeft = [1 0 0 -ds.defaultIPD/2; 0 1 0 0; 0 0 1 -ds.viewingDistance; 0 0 0 1]; %+/- IPD/2
     defaultState.modelViewDataRight = [1 0 0 ds.defaultIPD/2; 0 1 0 0; 0 0 1 -ds.viewingDistance; 0 0 0 1];
     oc.defaultState.modelView = {defaultState.modelViewDataLeft, defaultState.modelViewDataRight};
