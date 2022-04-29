@@ -136,9 +136,9 @@ kb.nextTrialKey = 0;
 
 
 while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
-        if ds.tvpmsd
-            %[vXw, vYw, shape] = Preprocess(ds, pa, shape, GL);% m/f in world coords
-        end
+    if ds.tvpmsd
+        %[vXw, vYw, shape] = Preprocess(ds, pa, shape, GL);% m/f in world coords
+    end
     while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
         ds.fCount = ds.fCount + 1; % frame count
         if (ds.tvpmcd || ds.tvpmsd) && ds.vbl <  pa.trialOnset + pa.targetMotionDuration  % if still presenting stim
@@ -172,7 +172,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         end
                     end
                     %}
-                   
+                    
                 end
                 %ds.fCount;
                 
@@ -300,7 +300,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     xDotDisplacementTraining = pa.transSpeedTraining.*sind(-1.*pa.heading(pa.trialNumber)).*elapsedTime;
                     zDotDisplacementTraining = pa.transSpeedTraining.*cosd(-1.*pa.heading(pa.trialNumber)).*elapsedTime;
                     
-
+                    
                     
                     if ds.simulated
                         
@@ -330,9 +330,9 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         glTranslatef(xDotDisplacementTraining,0,zDotDisplacementTraining);
                         moglDrawDots3D(ds.w, [0 0 -pa.cubeWidth/4 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
                         glPopMatrix;
-                         if mask == 1, drawTheHoleyBag(ds, 1), end % draws the ptb mask. Params: drawTheHoleyBag(window,[openglEnbled = 1]);
+                        if mask == 1, drawTheHoleyBag(ds, 1), end % draws the ptb mask. Params: drawTheHoleyBag(window,[openglEnbled = 1]);
                     elseif ds.tvpmsd
-                        % Draw Plaids 
+                        % Draw Plaids
                         glEnable(GL.POINT_SPRITE);
                         for i = 1:shape.plane.numPlanes
                             glBindTexture(type, shape.disk.texture.id)
@@ -346,7 +346,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         glTranslatef(-shape.mask.widths_m(1), 0.0, 0.0);
                         glCallList(shape.mask.listIds(1));
                         glPopMatrix;
-                              
+                        
                         glPushMatrix;
                         glTranslatef(0.0, 0.0, 0.0);
                         glCallList(shape.mask.listIds(2));
@@ -357,8 +357,15 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         glCallList(shape.mask.listIds(3));
                         glPopMatrix;
                         
+                        % Draw fixation dot
+                        glPushMatrix;
+                        curModelViewNoTranslation1 = glGetFloatv(GL.MODELVIEW_MATRIX);
+                        curModelViewNoTranslation2 = [curModelViewNoTranslation1(1:4),curModelViewNoTranslation1(5:8),curModelViewNoTranslation1(9:12),[0 0 0 1]']; % CSB, 4/12/2022- had to use the GL modelview without translation to make the fixation pt at right depth. it was broken b4 using eye.modelView. figure out why
+                        moglDrawDots3D(ds.w, inv(curModelViewNoTranslation2)*[[0 0 shape.plane.depths_m(2)+.01], 1.0]', pa.fixationDiameter, [], [], 2); %drawing horizontal fixation dot
+                        glPopMatrix;
+                        
                     elseif ds.tvpmcd
-                       
+                        
                         % Draw fixation dot
                         glPushMatrix;
                         curModelViewNoTranslation1 = glGetFloatv(GL.MODELVIEW_MATRIX);
@@ -369,19 +376,19 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         % Draw the 3 plaid planes
                         glPushMatrix;
                         glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
-                        gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
+                        %gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
                         glCallList(shape.plane.listIds(1));
                         glPopMatrix;
                         
                         glPushMatrix;
                         glTranslatef(0.0, 0.0, 0.0);
-                        gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
+                        %gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
                         glCallList(shape.plane.listIds(2));
                         glPopMatrix;
                         
                         glPushMatrix;
                         glTranslatef(shape.plane.widths_m(3), 0.0, 0.0);
-                        gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
+                        %gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
                         glCallList(shape.plane.listIds(3));
                         glPopMatrix;
                         
@@ -389,18 +396,18 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         if renderPass == 0
                             glPushMatrix;
                             glLoadIdentity;
-                            drawTheHoleyBag(shape.mask.fullWindowMaskLeftEye, ds, 1);
+                           % drawTheHoleyBag(shape.mask.fullWindowMaskLeftEye, ds, 1);
                             glPopMatrix;
                         end
                         if renderPass == 1
                             glPushMatrix;
                             glLoadIdentity;
-                            drawTheHoleyBag(shape.mask.fullWindowMaskRightEye, ds, 1);
+                            %drawTheHoleyBag(shape.mask.fullWindowMaskRightEye, ds, 1);
                             glPopMatrix;
                         end
                         
                     end
-        
+                    
                     
                 elseif ~kb.responseGiven && ds.vbl >  pa.trialOnset + pa.targetMotionDuration && ds.vbl <=  pa.trialOnset + pa.targetMotionDuration + pa.itiLength  % show paddle and allow observers to adjust its position - no time constraints - they press the space bar to lock in their response and start a new trial
                     
@@ -417,10 +424,6 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         glPopMatrix;
                         moglDrawDots3D(ds.w, [0 0 -pa.cubeWidth/4 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
                         
-                        %{
-                        ATTN: Do we need more elseif conditions here for
-                        tvpmsd and tvpmcd?!?
-                        %}
                         
                     end
                     pa.responseOnset = ds.vbl; % start the timer on the response time
@@ -551,12 +554,13 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     
                 elseif kb.responseGiven && ds.vbl >  pa.trialOnset + pa.targetMotionDuration + pa.itiLength && ds.vbl <  pa.trialOnset + pa.targetMotionDuration + pa.itiLength + pa.recenterScreenLength
                     
+                    
                     if ds.stimulus || ds.real
-                         glPushMatrix;
+                        glPushMatrix;
                         recenteringDotCoords = [0, 0, -20 1]'; % does this do the right thing??? i'm just updating according to the head rotation info from beginning of frame... important to test explicitly somehow if the dot actually appears in a fixed straight ahead in world coords
                         moglDrawDots3D(ds.w, recenteringDotCoords, 40, [1 0 0 1], [], 2);
                         glPopMatrix;
-
+                        
                         glPushMatrix;
                         invModelView = inv(eye.modelView);
                         moglDrawDots3D(ds.w, inv(modelView)*[pa.fixationVertexPos, 1.0]', pa.fixationDiameter, [1 1 1 1], [], 2); %drawing horizontal fixation dot
@@ -581,7 +585,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     [ds, pa, kb, oc] = SetupNewTrial(ds, pa, kb, oc); % setup new trial
                     
                 elseif ~kb.responseGiven && ds.vbl >  pa.trialOnset + pa.targetMotionDuration + pa.itiLength && ds.vbl <  pa.trialOnset + pa.targetMotionDuration + pa.itiLength + pa.recenterScreenLength
-
+                    
                     if ds.simulated || ds.real
                         
                         recenteringDotCoords = [0, 0, -20, 1]'; % does this do the right thing??? i'm just updating according to the head rotation info from beginning of frame... important to test explicitly somehow if the dot actually appears in a fixed straight ahead in world coords
@@ -608,10 +612,10 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         moglDrawDots3D(ds.w, recenteringDotCoords, 40, [1 0 0 1], [], 2);
                         glPopMatrix;
                         
-%                         glPushMatrix;
-%                         invModelView = inv(eye.modelView);
-%                         moglDrawDots3D(ds.w, inv(modelView)*[[0 0 shape.plane.depths_m(2)], 1.0]', pa.fixationDiameter, [1 1 1 1], [], 2); %drawing horizontal fixation dot
-%                         glPopMatrix;
+                        %                         glPushMatrix;
+                        %                         invModelView = inv(eye.modelView);
+                        %                         moglDrawDots3D(ds.w, inv(modelView)*[[0 0 shape.plane.depths_m(2)], 1.0]', pa.fixationDiameter, [1 1 1 1], [], 2); %drawing horizontal fixation dot
+                        %                         glPopMatrix;
                     end
                     
                 elseif ~kb.responseGiven && ds.vbl >= pa.trialOnset + pa.targetMotionDuration + pa.itiLength + pa.recenterScreenLength % when you've not responded and it's the last frame of the trial, start new trial
@@ -688,7 +692,6 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
         [kb.keyIsDown, kb.secs, kb.keyCode] = KbCheck(-1); % query the keyboard
         if kb.keyIsDown && kb.keyCode(kb.spacebarKey)
             pa.readyToBeginRun=1;
-            %keyboard
             
             % save out data before you setup new run
             pa.dataFile = fullfile(pa.Desktop, 'stereoOFdata', [pa.subjectName '-' ds.experimentType '-' pa.date '-' num2str(pa.runNumber) '.mat']);

@@ -177,7 +177,7 @@ else % No hmd
     %     ds.vFOV_perPersonAvg = 18.5; %deg
     ds.hFOV_perPersonAvg = 87; %deg
     ds.vFOV_perPersonAvg = 84; %deg
-    ds.screenRenderWidthMonocular_px = 1792;
+    ds.screenRenderWidthMonocular_px = 1792/2;
     ds.screenRenderHeightMonocular_px = 1120;
     ds.hor_px_per_deg = ds.screenRenderWidthMonocular_px/ds.hFOV_perPersonAvg; %
     ds.ver_px_per_deg = ds.screenRenderHeightMonocular_px/ds.vFOV_perPersonAvg;
