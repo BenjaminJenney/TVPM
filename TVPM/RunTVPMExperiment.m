@@ -26,7 +26,7 @@ addpath(genpath(pwd));
 %% Init input variables
 
 pa.subjectName = subjectInitials; % initials of participant
-ds.experimentType = condition; % 'real', 'simulated', 'stabilized', 'tvpmsd', 'tvpmmask'
+ds.experimentType = condition; % 'real', 'simulated', 'tvpmsd', 'tvpmmask'
 ds.monocularFlag = monocularFlag; % 1: monocular viewing, 2: binocular viewing
 pa.TRAINING = trainingFlag; % 1 for training runs (will run two runs without rotation), or 0 for experiment (18 runs, all rotation velocities and headings)
 
@@ -134,7 +134,6 @@ pa.experimentOnset = ds.vbl;
 pa.block = 0;
 kb.nextTrialKey = 0;
 
-rotationMatrixYawHomo = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]; % initialize for simulated condition
 
 while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
         if ds.tvpmsd
@@ -232,18 +231,13 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         oc.modelViewDataLeft = [oc.modelViewDataLeft; eye.modelView];
                     end
                     
-                    if ~ds.trackingFlag % 'stabilized' condition loop - don't update the scene with tracked head motion, just use the default state
-                        eye.modelView = modelView; %pa.modelViewSaveOutForFixed{ds.renderPass + 1}; % oc.defaultState.initialState.modelView{ds.renderPass + 1}; % comes back from the initial call...will not update the scene based on head tracking
-                        state.tracked = 2;
-                        eye.eyeIndex = ds.renderPass;
-                    end
                     
                 end
                 
                 Screen('SelectStereoDrawbuffer', ds.w, eye.eyeIndex); % Select 'eyeIndex' to render (left- or right-eye):
                 
                 if ds.simulated
-                    modelView = rotationMatrixYawHomo*eye.modelView;
+                    modelView = eye.modelView;
                 else
                     % Force camera for each eye using modelView specified
                     % by Bas. Change back to eye.modelView non-fixed normal
@@ -306,26 +300,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     xDotDisplacementTraining = pa.transSpeedTraining.*sind(-1.*pa.heading(pa.trialNumber)).*elapsedTime;
                     zDotDisplacementTraining = pa.transSpeedTraining.*cosd(-1.*pa.heading(pa.trialNumber)).*elapsedTime;
                     
-                    if ds.simulated
-                        % make simulated rotation matrix into homogenous cooridnates and
-                        % invert it to transform back to original space before simulated rotation ... and
-                        % additionally multiply by inverse modelView to undo head tracking,
-                        % This will keep the fixation point in the line of sight.
-                        %rotationMatrixYawHomo = [[rotationMatrixYaw; 0 0 0] [0 0 0 1]'];
-                        %                         fixationPos =  inv(modelView) * [pa.fixationVertexPos, 1.0]'; % for fixation, must rotate back to center of screen according to BOTH head movement AND world rotation
-                        %                         fixationPos = fixationPos(1:3);
-                        %                         %Get ready to make the pursuit target fixed, too.
-                        %                         % OLD % pursuitTargetCoords = inv(rotationMatrixYawHomo) * [xPosPursuit, 0, -zPosPursuit 1]'; % fox pursuit, we want it fixed in the world, despite simulated rotation, so just rotate back according to simulated rotation
-                        %                         pursuitTargetCoords = inv(rotationMatrixYawHomo) * [xPosPursuit, 0, -zPosPursuit 1]'; % for pursuit, we want it fixed in the world, despite simulated rotation, so just rotate back according to simulated rotation
-                        
-                        %Translating the pursuit target
-                        %moglDrawDots3D(ds.w, pursuitTargetCoords(1:3), 3*2, pa.red, [], 2); % fixation csb june 28 2021
-                        %moglDrawDots3D(ds.w, pursuitTargetCoords(1:3), 36, pa.black, [], 2);
-                        
-                        %moglDrawDots3D(ds.w, fixationPos, pa.fixationDiameter,[1 1 1 1], [], 2); %drawing horizontal fixation dot  % CSB june 21 2021 uncomment
-                        
-                    end
-                    
+
                     
                     if ds.simulated
                         
@@ -425,11 +400,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         end
                         
                     end
-                    %if ds.simulated % added csb july 3 2021. for plotting original fixation pt, for debugging. the two fixation pts should be in the same retinal location
-                    %                         glPushMatrix;
-                    %                         moglDrawDots3D(ds.w, inv(rotationMatrixYawHomo)*[0 0 -pa.cubeWidth/4 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
-                    %                         glPopMatrix;
-                    %                     end
+        
                     
                 elseif ~kb.responseGiven && ds.vbl >  pa.trialOnset + pa.targetMotionDuration && ds.vbl <=  pa.trialOnset + pa.targetMotionDuration + pa.itiLength  % show paddle and allow observers to adjust its position - no time constraints - they press the space bar to lock in their response and start a new trial
                     
@@ -616,8 +587,6 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         recenteringDotCoords = [0, 0, -20, 1]'; % does this do the right thing??? i'm just updating according to the head rotation info from beginning of frame... important to test explicitly somehow if the dot actually appears in a fixed straight ahead in world coords
                         glPushMatrix;
                         if ds.simulated
-                            moglDrawDots3D(ds.w, inv(rotationMatrixYawHomo)*recenteringDotCoords, 40, [1 0 0 1], [], 2); % I think this is close to right but still not completely right bc the recentering dot is being updated according to dot world translation or something FIND OUT> ATTN
-                        else
                             moglDrawDots3D(ds.w, recenteringDotCoords, 40, [1 0 0 1], [], 2);
                         end
                         glPopMatrix;

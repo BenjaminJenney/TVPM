@@ -1,7 +1,4 @@
 function [ds,oc] = SetupDisplay(ds)
-% CSB: 08/01/2019. ATTN, desparately need to clean up this function and remove
-% unnecessary things, not hardcode whether oculus is connected, etc.
-
 
 % Setup Psychtoolbox for OpenGL 3D rendering support and initialize the
 % mogl OpenGL for Matlab/Octave wrapper:
@@ -20,11 +17,11 @@ PsychImaging('PrepareConfiguration');
 % response to the movement
 if ds.oculusConnected==1
     ds.hmd = PsychVRHMD('AutoSetupHMD', 'Tracked3DVR', 'LowPersistence TimeWarp FastResponse DebugDisplay', 0);
-
+    
     PsychVRHMD('SetHSWDisplayDismiss', ds.hmd, -1);
     load('DefaultHMDParameters.mat');
     oc.defaultState = defaultState;
-
+    
     %     Return matrices for left and right “eye cameras” which can be directly
     % used as OpenGL GL_MODELVIEW matrices for rendering the scene. 4x4 matrices
     % for left- and right eye are contained in state.modelView{1} and {2}.
@@ -51,7 +48,7 @@ else % oculus not connected
     ds.gammaVals = [GammaValue GammaValue GammaValue];
     load('DefaultHMDParameters.mat');
     oc.defaultState = defaultState;
-
+    
     ds.defaultIPD = 0;%0.064; % in m
     ds.viewingDistance = 0;%0.45;
     defaultState.modelViewDataLeft = [1 0 0 -ds.defaultIPD/2; 0 1 0 0; 0 0 1 -ds.viewingDistance; 0 0 0 1]; %+/- IPD/2
@@ -61,7 +58,7 @@ else % oculus not connected
     oc.defaultState.modelView{1}(15) = -ds.viewingDistance;
     oc.defaultState.modelView{2}(13) = -ds.defaultIPD/2;
     oc.defaultState.modelView{2}(15) = -ds.viewingDistance;
-
+    
     %PsychImaging('AddTask', 'General', 'SideBySideCompressedStereo'); % CSB: for specifying which eye channel we're displaying to. This isn't working with Screen('SelectStereoDrawBuffer')...
 end
 
@@ -74,9 +71,9 @@ else % Oculus not connected
     else
         ds.winRect = [0,0, 1792, 1120];
     end
-      %PsychImaging('AddTask', 'General', 'UseRetinaResolution');
+    %PsychImaging('AddTask', 'General', 'UseRetinaResolution');
     [ds.w, ds.windowRect] = PsychImaging('OpenWindow', ds.screenId, 0, ds.winRect, [], [], 4, ds.multiSample);  % CSB. split screen mode; "4" sets this
-  
+    
 end
 ds.windowRect
 %
@@ -103,13 +100,6 @@ switch ds.experimentType
         ds.real = 0;
         ds.simulated = 1;
         ds.stabilized = 0;
-        ds.tvpmsd = 0;
-        ds.tvpmcd = 0;
-    case ('stabilized')
-        ds.trackingFlag = 0;
-        ds.real = 0;
-        ds.simulated = 1;
-        ds.stabilized = 1;
         ds.tvpmsd = 0;
         ds.tvpmcd = 0;
     case ('tvpmsd')
@@ -139,10 +129,10 @@ if ~isempty(ds.hmd) % CSB: if using hmd
     ds.yc = RectHeight(ds.windowRect)/2; % the horizontal center of the display in pixels
     ds.xc = RectWidth(ds.windowRect)/2; % the vertical center of the display in pixels
     ds.textCoords = [ds.yc ds.xc];
-
+    
     if strcmp(ds.hmdinfo.modelName, 'Oculus Rift CV1')
         ds.hmdinfo = PsychVRHMD('GetInfo', ds.hmd); % query CV1 for params
-
+        
         % Calculate display properties
         ds.screenRenderWidthMonocular_px   = 2*ds.xc; % the discrepancy btw. oculus's spec reported res of 1080 * 1200 is that the render resolution is higher than the screen res in order to make up for the barrel transform.
         ds.screenRenderHeightMonocular_px  = 2*ds.yc;
@@ -165,61 +155,26 @@ if ~isempty(ds.hmd) % CSB: if using hmd
         ds.ver_px_per_deg  = (ds.screenRenderHeightMonocular_px*1)/ds.vFOV_perPersonAvg*1;
         ds.deg_per_px  = 1/ds.hor_px_per_deg;
         ds.focalLength = 1.2;
-
+        
         ds.dFOV = sqrt(ds.hFOV^2 + ds.vFOV^2);
-
+        
         ds.metersPerDegree =  ds.viewportWidthM/ds.hFOV_perPersonAvg;
         ds.degreesPerM = ds.hFOV_perPersonAvg/ds.viewportWidthM;
-
-
+        
+        
         ds.pixelsPerM = sqrt(RectHeight(ds.windowRect)^2 + RectWidth(ds.windowRect)^2) / ds.viewportWidthM;
-
+        
         % ds.frameRate = 90;
         ds.frameRate = 1./ds.hmdinfo.videoRefreshDuration;
         ds.ifi = Screen('GetFlipInterval', ds.w); % Get duration of a single frame
-    elseif strcmp(ds.hmdinfo.modelName, 'Oculus Rift DK2')
-        ds.hFOV = 74;  % in deg - this is what is spit back from the Oculus readings at the start - horizontal field of view - but the display seems to flip them so h = v and vice versa
-        ds.vFOV = 54;  % in deg - vertical field of view
-        ds.dFOV = sqrt(ds.hFOV^2 + ds.vFOV^2);
-        ds.viewportWidthM = 0.1512; % based on spec of 151.2 mm - height component of the display - corresponding to the longer side of the display
-        ds.metersPerDegree =  ds.viewportWidthM/ds.hFOV;
-        ds.viewportWidthDeg = ds.hFOV;
-        ds.pixelsPerDegree = sqrt(RectHeight(ds.windowRect)^2 + RectWidth(ds.windowRect)^2) / ds.viewportWidthDeg;
-        ds.pixelsPerM = sqrt(RectHeight(ds.windowRect)^2 + RectWidth(ds.windowRect)^2) / ds.viewportWidthM;
-        ds.frameRate = 75;
+        
     end
 else % No hmd
-    % CSB: screen params for default monitor, "whistler"
-%     ds.viewingDistance = 2.8; % CSB: viewing dist in m. for Heeger lab computer "whistler."
-%     ds.xyM = [.5 .31]; % width x height of "whistler" display in m.
-%     ds.xyPix = [RectWidth(ds.windowRect) RectHeight(ds.windowRect)]; % width by height of "whistler" display in pixels
-%     ds.xyDva = 2*atand(ds.xyM./(2.*ds.viewingDistance)); %  width by height of "whistler" display in degrees of visual angle
-%     ds.hFOV = ds.xyDva(1);  % in deg - horizontal field of view. % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
-%     ds.vFOV = ds.xyDva(2);  % in deg - vertical field of view. % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
-%     ds.viewportWidthM = ds.xyM(1);  % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
-% 
-%     ds.dFOV = sqrt(ds.xyDva(1).^2 + ds.xyDva(2).^2);
-% 
-%     ds.Height = 1.7614; % virtual height of the surround texture in meters, based on viewing distance - we want this to relate to the shorter dimension of the display
-%     ds.halfHeight = ds.Height/2;
-%     ds.Width = 1.7614; % virtual width of the surround texture in meters, based on viewing distance - we want this to relate to the longer dimension of the display
-%     ds.halfWidth = ds.Width/2;
-% 
-%     ds.xyc = ds.xyPix./2; % the horizontal and vertical centers of the display in pixels
-%     ds.xc = ds.xyc(1); % the horizontal center of the display in pixels % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
-%     ds.yc = ds.xyc(2); % the vertical center of the display in pixels % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
-%     ds.textCoords = [ds.xc ds.yc];
-% 
-%     ds.metersPerDegree =  ds.viewportWidthM/ds.hFOV;
-%     ds.viewportWidthDeg = ds.hFOV;
-
-%     ds.pixelsPerDegree = sqrt(ds.xyPix(1).^2 + ds.xyPix(2).^2) ./ ds.xyDva(1);
-%     ds.pixelsPerM = sqrt(ds.xyPix(1).^2 + ds.xyPix(2).^2) ./ ds.xyM(1) ;
-
+    
     % BR DEBUG - getting some not-defined errors
-
-%     ds.hFOV_perPersonAvg = 28; %deg
-%     ds.vFOV_perPersonAvg = 18.5; %deg
+    
+    %     ds.hFOV_perPersonAvg = 28; %deg
+    %     ds.vFOV_perPersonAvg = 18.5; %deg
     ds.hFOV_perPersonAvg = 87; %deg
     ds.vFOV_perPersonAvg = 84; %deg
     ds.screenRenderWidthMonocular_px = 1792;
@@ -231,7 +186,7 @@ else % No hmd
     ds.pixelsPerM = 1792/0.2159;
     
     ds.textCoords = [ds.screenRenderWidthMonocular_px/2 ds.screenRenderHeightMonocular_px/2];
-
+    
 end
 
 
@@ -278,22 +233,6 @@ glBlendFunc(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA);
 % well, the best aproximation one can do with 3 lines of code ;-)
 glMatrixMode(GL.PROJECTION);
 
-% Retrieve and set camera projection matrix for optimal rendering on the HMD:
-% if ~isempty(ds.hmd)
-%     [ds.projMatrix{1} ds.projMatrix{2}] = PsychVRHMD('GetStaticRenderParameters', ds.hmd);%, 0.01, 5);  % add here the clipping plane distances; they are [clipNear=0.01],[clipFar=10000] by default
-% else
-%
-%     ds.projMatrix{1} = [1.1903         0   -0.1486         0
-%         0    0.9998   -0.1107         0
-%         0         0   -1.0000   -0.0200
-%         0         0   -1.0000         0];
-%
-%     ds.projMatrix{2} = [1.1903         0   0.1486         0
-%         0    0.9998   -0.1107         0
-%         0         0   -1.0000   -0.0200
-%         0         0   -1.0000         0];
-%
-% end
 
 % % Retrieve and set camera projection matrix for optimal rendering on the HMD:
 if ~isempty(ds.hmd)
