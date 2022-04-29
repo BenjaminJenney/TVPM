@@ -1,6 +1,6 @@
 function [ds,oc] = SetupDisplay(ds)
 % CSB: 08/01/2019. ATTN, desparately need to clean up this function and remove
-% unnecessary things, not hardcode whether oculus is connected, etc.  
+% unnecessary things, not hardcode whether oculus is connected, etc.
 
 
 % Setup Psychtoolbox for OpenGL 3D rendering support and initialize the
@@ -9,7 +9,7 @@ InitializeMatlabOpenGL(1);
 PsychDefaultSetup(2); % the input of 2 means: execute the AssertOpenGL command, execute KbName('UnifyKeyNames') routine, AND unifies the color mode and switches from 0-255 to 0.0-1.0 - color part only impacts the current function or script, not ones that are called
 % CSB: 08/1/2019, didn't we already do this in runExperiment.m??
 
-ds.oculusConnected = 1; %0 % Is the HMD connected
+ds.oculusConnected = 0; %1; %0 % Is the HMD connected
 ds.screenId = max(Screen('Screens')); % Find the screen to use for display:
 ds.multiSample = 8;
 ds.doSeparateEyeRender = 1; % render two eyes' views
@@ -20,14 +20,14 @@ PsychImaging('PrepareConfiguration');
 % response to the movement
 if ds.oculusConnected==1
     ds.hmd = PsychVRHMD('AutoSetupHMD', 'Tracked3DVR', 'LowPersistence TimeWarp FastResponse DebugDisplay', 0);
-    
+
     PsychVRHMD('SetHSWDisplayDismiss', ds.hmd, -1);
     load('DefaultHMDParameters.mat');
     oc.defaultState = defaultState;
-    
-%     Return matrices for left and right “eye cameras” which can be directly
-% used as OpenGL GL_MODELVIEW matrices for rendering the scene. 4x4 matrices
-% for left- and right eye are contained in state.modelView{1} and {2}.
+
+    %     Return matrices for left and right “eye cameras” which can be directly
+    % used as OpenGL GL_MODELVIEW matrices for rendering the scene. 4x4 matrices
+    % for left- and right eye are contained in state.modelView{1} and {2}.
     % as of the PTB release for the CV1, there is built-in gamma correction
     % in Psychtoolbox for the devices
     ds.defaultIPD = 0.064; % in m
@@ -51,7 +51,7 @@ else % oculus not connected
     ds.gammaVals = [GammaValue GammaValue GammaValue];
     load('DefaultHMDParameters.mat');
     oc.defaultState = defaultState;
-    
+
     %PsychImaging('AddTask', 'General', 'SideBySideCompressedStereo'); % CSB: for specifying which eye channel we're displaying to. This isn't working with Screen('SelectStereoDrawBuffer')...
 end
 
@@ -126,10 +126,10 @@ if ~isempty(ds.hmd) % CSB: if using hmd
     ds.yc = RectHeight(ds.windowRect)/2; % the horizontal center of the display in pixels
     ds.xc = RectWidth(ds.windowRect)/2; % the vertical center of the display in pixels
     ds.textCoords = [ds.yc ds.xc];
-    
+
     if strcmp(ds.hmdinfo.modelName, 'Oculus Rift CV1')
         ds.hmdinfo = PsychVRHMD('GetInfo', ds.hmd); % query CV1 for params
-        
+
         % Calculate display properties
         ds.screenRenderWidthMonocular_px   = 2*ds.xc; % the discrepancy btw. oculus's spec reported res of 1080 * 1200 is that the render resolution is higher than the screen res in order to make up for the barrel transform.
         ds.screenRenderHeightMonocular_px  = 2*ds.yc;
@@ -139,10 +139,10 @@ if ~isempty(ds.hmd) % CSB: if using hmd
         ds.screenWidthBinocular_px         = ds.screenHeightMonocular_px*2; % apparently just multiply by # of lens.
         ds.hFOV = 80; % in deg - this is what is spit back from the Oculus readings at the start - horizontal field of view
         ds.vFOV = 90;  % in deg - vertical field of view
-        ds.hFOV_perPersonAvg   = 87; % based on averages taken from https://www.infinite.cz/blog/VR-Field-of-View-measured-explained   
+        ds.hFOV_perPersonAvg   = 87; % based on averages taken from https://www.infinite.cz/blog/VR-Field-of-View-measured-explained
         ds.hFOV_psych          = ds.hmdinfo.fovL(1) + ds.hmdinfo.fovL(2); % in deg - symmetric for fovL and fovR
-        ds.vFOV_perPersonAvg   = 84; % based on averages taken from https://www.infinite.cz/blog/VR-Field-of-View-measured-explained   
-          ds.hFOV_psych          = ds.hmdinfo.fovL(3) + ds.hmdinfo.fovL(4); % in deg - vertical field of view 
+        ds.vFOV_perPersonAvg   = 84; % based on averages taken from https://www.infinite.cz/blog/VR-Field-of-View-measured-explained
+        ds.hFOV_psych          = ds.hmdinfo.fovL(3) + ds.hmdinfo.fovL(4); % in deg - vertical field of view
         ds.screenX_deg = ds.hFOV_perPersonAvg;
         ds.screenY_deg = ds.vFOV_perPersonAvg;
         ds.viewportWidthDeg = ds.hFOV;
@@ -150,17 +150,17 @@ if ~isempty(ds.hmd) % CSB: if using hmd
         %ds.pixelsPerDegree = ds.screenRenderWidthMonocular_px  / ds.viewportWidthDeg;
         ds.hor_px_per_deg  = (ds.screenRenderWidthMonocular_px*1)/ds.hFOV_perPersonAvg; %~15.45 this seems pretty good check out: https://www.roadtovr.com/understanding-pixel-density-retinal-resolution-and-why-its-important-for-vr-and-ar-headsets/
         ds.ver_px_per_deg  = (ds.screenRenderHeightMonocular_px*1)/ds.vFOV_perPersonAvg*1;
-            ds.deg_per_px  = 1/ds.hor_px_per_deg;
+        ds.deg_per_px  = 1/ds.hor_px_per_deg;
         ds.focalLength = 1.2;
 
         ds.dFOV = sqrt(ds.hFOV^2 + ds.vFOV^2);
-         
-         ds.metersPerDegree =  ds.viewportWidthM/ds.hFOV_perPersonAvg;
-         ds.degreesPerM = ds.hFOV_perPersonAvg/ds.viewportWidthM;
-         
-         
-         ds.pixelsPerM = sqrt(RectHeight(ds.windowRect)^2 + RectWidth(ds.windowRect)^2) / ds.viewportWidthM;
-        
+
+        ds.metersPerDegree =  ds.viewportWidthM/ds.hFOV_perPersonAvg;
+        ds.degreesPerM = ds.hFOV_perPersonAvg/ds.viewportWidthM;
+
+
+        ds.pixelsPerM = sqrt(RectHeight(ds.windowRect)^2 + RectWidth(ds.windowRect)^2) / ds.viewportWidthM;
+
         % ds.frameRate = 90;
         ds.frameRate = 1./ds.hmdinfo.videoRefreshDuration;
         ds.ifi = Screen('GetFlipInterval', ds.w); % Get duration of a single frame
@@ -184,25 +184,34 @@ else % No hmd
     ds.hFOV = ds.xyDva(1);  % in deg - horizontal field of view. % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
     ds.vFOV = ds.xyDva(2);  % in deg - vertical field of view. % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
     ds.viewportWidthM = ds.xyM(1);  % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
-    
+
     ds.dFOV = sqrt(ds.xyDva(1).^2 + ds.xyDva(2).^2);
-    
+
     ds.Height = 1.7614; % virtual height of the surround texture in meters, based on viewing distance - we want this to relate to the shorter dimension of the display
     ds.halfHeight = ds.Height/2;
     ds.Width = 1.7614; % virtual width of the surround texture in meters, based on viewing distance - we want this to relate to the longer dimension of the display
     ds.halfWidth = ds.Width/2;
-    
+
     ds.xyc = ds.xyPix./2; % the horizontal and vertical centers of the display in pixels
     ds.xc = ds.xyc(1); % the horizontal center of the display in pixels % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
     ds.yc = ds.xyc(2); % the vertical center of the display in pixels % CSB: redundant, but one of these variables is being used elsewhere so I had to reproduce :/
     ds.textCoords = [ds.xc ds.yc];
-    
+
     ds.metersPerDegree =  ds.viewportWidthM/ds.hFOV;
     ds.viewportWidthDeg = ds.hFOV;
-    
+
     ds.pixelsPerDegree = sqrt(ds.xyPix(1).^2 + ds.xyPix(2).^2) ./ ds.xyDva(1);
     ds.pixelsPerM = sqrt(ds.xyPix(1).^2 + ds.xyPix(2).^2) ./ ds.xyM(1) ;
-    
+
+    % BR DEBUG - getting some not-defined errors
+    ds.hor_px_per_deg = 40; %
+    ds.ver_px_per_deg = 40;
+    ds.hFOV_perPersonAvg = 90;
+    ds.vFOV_perPersonAvg = 110;
+    ds.deg_per_px = 1/40;
+    ds.screenRenderWidthMonocular_px = 1920;
+    ds.screenRenderHeightMonocular_px = 1080;
+
 end
 
 
@@ -253,26 +262,26 @@ glMatrixMode(GL.PROJECTION);
 % if ~isempty(ds.hmd)
 %     [ds.projMatrix{1} ds.projMatrix{2}] = PsychVRHMD('GetStaticRenderParameters', ds.hmd);%, 0.01, 5);  % add here the clipping plane distances; they are [clipNear=0.01],[clipFar=10000] by default
 % else
-%     
+%
 %     ds.projMatrix{1} = [1.1903         0   -0.1486         0
 %         0    0.9998   -0.1107         0
 %         0         0   -1.0000   -0.0200
 %         0         0   -1.0000         0];
-%     
+%
 %     ds.projMatrix{2} = [1.1903         0   0.1486         0
 %         0    0.9998   -0.1107         0
 %         0         0   -1.0000   -0.0200
 %         0         0   -1.0000         0];
-%     
+%
 % end
 
 % % Retrieve and set camera projection matrix for optimal rendering on the HMD:
 if ~isempty(ds.hmd)
     [ds.projMatrix{1}, ds.projMatrix{2}] = PsychVRHMD('GetStaticRenderParameters', ds.hmd);
-else 
+else
     temp = load('dsHmdInfoCV1.mat');
     ds.projMatrix = temp.ds.projMatrix;
-    clear temp    
+    clear temp
 end
 
 
@@ -298,8 +307,8 @@ glClearColor(0.5,0.5,0.5,1); % mid-gray
 glClear;
 
 glEnable(GL_TEXTURE_2D); % Prepare environment for low level OpenGL Texture Rendering
-                         % If geometry is not textured, it's likely because
-                         % GL_TEXTURE_2D is not enabled
+% If geometry is not textured, it's likely because
+% GL_TEXTURE_2D is not enabled
 
 % Finish OpenGL rendering into PTB window. This will switch back to the
 % standard 2D drawing functions of Screen and will check for OpenGL errors.

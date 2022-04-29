@@ -20,6 +20,9 @@ function RunTVPMExperiment(subjectInitials,condition,monocularFlag,trainingFlag,
 close all;
 sca;
 
+% Add paths
+addpath(genpath(pwd));
+
 %% Init input variables
 
 pa.subjectName = subjectInitials; % initials of participant
