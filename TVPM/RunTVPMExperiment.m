@@ -213,6 +213,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         end
                     end
                     
+                    
                     %[pa, kb, eye, ds, state]  = GetKeyboardHeadmotion(pa, ds, kb, eye, state);  % query the keyboard to allow the observer to rotate the paddle and eventually lock in his/her response to initiate a new trial
                     
                 else % hmd connected
@@ -259,6 +260,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 glClearColor(0.5, 0.5, 0.5, 0.5); % white background
                 glClear(); % clear the buffers - must be done for every frame
                 glColor3f(1,1,1);
+                
                 
                 glPushMatrix;
                 %% Experiment Logic
@@ -358,10 +360,11 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         glPopMatrix;
                         
                         % Draw fixation dot
+
                         glPushMatrix;
                         curModelViewNoTranslation1 = glGetFloatv(GL.MODELVIEW_MATRIX);
                         curModelViewNoTranslation2 = [curModelViewNoTranslation1(1:4),curModelViewNoTranslation1(5:8),curModelViewNoTranslation1(9:12),[0 0 0 1]']; % CSB, 4/12/2022- had to use the GL modelview without translation to make the fixation pt at right depth. it was broken b4 using eye.modelView. figure out why
-                        moglDrawDots3D(ds.w, inv(curModelViewNoTranslation2)*[[0 0 shape.plane.depths_m(2)+.01], 1.0]', pa.fixationDiameter, [], [], 2); %drawing horizontal fixation dot
+                        moglDrawDots3D(ds.w, [[0 0 shape.plane.depths_m(2)+.01], 1.0]', pa.fixationDiameter, [], [], 2); %drawing horizontal fixation dot
                         glPopMatrix;
                         
                     elseif ds.tvpmcd
@@ -396,13 +399,13 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         if renderPass == 0
                             glPushMatrix;
                             glLoadIdentity;
-                           % drawTheHoleyBag(shape.mask.fullWindowMaskLeftEye, ds, 1);
+                            drawTheHoleyBag(shape.mask.fullWindowMaskLeftEye, ds, 1);
                             glPopMatrix;
                         end
                         if renderPass == 1
                             glPushMatrix;
                             glLoadIdentity;
-                            %drawTheHoleyBag(shape.mask.fullWindowMaskRightEye, ds, 1);
+                            drawTheHoleyBag(shape.mask.fullWindowMaskRightEye, ds, 1);
                             glPopMatrix;
                         end
                         
