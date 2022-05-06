@@ -335,29 +335,38 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         if mask == 1, drawTheHoleyBag(ds, 1), end % draws the ptb mask. Params: drawTheHoleyBag(window,[openglEnbled = 1]);
                     elseif ds.tvpmsd
                         % Draw Plaids
-                        glEnable(GL.POINT_SPRITE);
-                        for i = 1:shape.plane.numPlanes
-                            glBindTexture(type, shape.disk.texture.id)
-                            moglDrawDots3D(ds.w, [posX{i}, posY{i}, shape.disk.Z_m{i} + .002]', shape.disk.size_px, [], [], 0);
-                            glBindTexture(type, 0);
+%                         glEnable(GL.POINT_SPRITE);
+%                         for i = 1:shape.plane.numPlanes
+%                             glBindTexture(type, shape.disk.texture.id)
+%                             moglDrawDots3D(ds.w, [posX{i}, posY{i}, shape.disk.Z_m{i} + .002]', shape.disk.size_px, [], [], 0);
+%                             glBindTexture(type, 0);
+%                         end
+%                         glDisable(GL.POINT_SPRITE);
+                        %glBindTexture(type, shape.disk.texture.id);
+                        for y = 1:shape.plane.numPlanes
+                            for z = 1:shape.disk.numDisksPerPlane
+                                glPushMatrix;
+                                glTranslatef(posX{y}(z), posY{y}(z), shape.disk.Z_m{y}(z)+.002)
+                                glCallList(shape.disk.listIds(y))
+                                glPopMatrix;
+                            end
                         end
-                        glDisable(GL.POINT_SPRITE);
-                        
+                        %glBindTexture(type, 0);
                         %{ Draw the 3 masks for TVPM Full %}
-                        glPushMatrix;
-                        glTranslatef(-shape.mask.widths_m(1), 0.0, 0.0);
-                        glCallList(shape.mask.listIds(1));
-                        glPopMatrix;
-                        
-                        glPushMatrix;
-                        glTranslatef(0.0, 0.0, 0.0);
-                        glCallList(shape.mask.listIds(2));
-                        glPopMatrix;
-                        
-                        glPushMatrix;
-                        glTranslatef(shape.mask.widths_m(3), 0.0, 0.0);
-                        glCallList(shape.mask.listIds(3));
-                        glPopMatrix;
+%                         glPushMatrix;
+%                         glTranslatef(-shape.mask.widths_m(1), 0.0, 0.0);
+%                         glCallList(shape.mask.listIds(1));
+%                         glPopMatrix;
+%                         
+%                         glPushMatrix;
+%                         glTranslatef(0.0, 0.0, 0.0);
+%                         glCallList(shape.mask.listIds(2));
+%                         glPopMatrix;
+%                         
+%                         glPushMatrix;
+%                         glTranslatef(shape.mask.widths_m(3), 0.0, 0.0);
+%                         glCallList(shape.mask.listIds(3));
+%                         glPopMatrix;
                         
                         % Draw fixation dot
 
