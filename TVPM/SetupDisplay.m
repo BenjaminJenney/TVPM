@@ -6,7 +6,7 @@ InitializeMatlabOpenGL(1);
 PsychDefaultSetup(2); % the input of 2 means: execute the AssertOpenGL command, execute KbName('UnifyKeyNames') routine, AND unifies the color mode and switches from 0-255 to 0.0-1.0 - color part only impacts the current function or script, not ones that are called
 % CSB: 08/1/2019, didn't we already do this in runExperiment.m??
 
-ds.oculusConnected = 0; %1; %0 % Is the HMD connected
+%ds.oculusConnected = 1; %1; %0 % Is the HMD connected
 ds.screenId = max(Screen('Screens')); % Find the screen to use for display:
 ds.multiSample = 8;
 ds.doSeparateEyeRender = 1; % render two eyes' views
@@ -27,8 +27,8 @@ if ds.oculusConnected==1
     % for left- and right eye are contained in state.modelView{1} and {2}.
     % as of the PTB release for the CV1, there is built-in gamma correction
     % in Psychtoolbox for the devices
-    ds.defaultIPD = 0.064; % in m
-    ds.viewingDistance = .45;
+    ds.defaultIPD = 0.0;%0.064; % in m
+    ds.viewingDistance = 0.0;%.45;
     defaultState.modelViewDataLeft = [1 0 0 -ds.defaultIPD/2; 0 1 0 0; 0 0 1 -ds.viewingDistance; 0 0 0 1]; %+/- IPD/2
     defaultState.modelViewDataRight = [1 0 0 ds.defaultIPD/2; 0 1 0 0; 0 0 1 -ds.viewingDistance; 0 0 0 1];
     oc.defaultState.modelView = {defaultState.modelViewDataLeft, defaultState.modelViewDataRight};

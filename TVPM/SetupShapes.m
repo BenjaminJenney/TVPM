@@ -135,10 +135,10 @@ shape.disk.vertices = {};
 
 for i = 1:numPlanes
     ithDiskVertices =[-plaidWidths_m(i)/2 -plaidHeights_m(i)/2 depths_m(i) ;...
-        plaidWidths_m(i)/2 -plaidHeights_m(i)/2 depths_m(i) ;...
-        plaidWidths_m(i)/2  plaidHeights_m(i)/2 depths_m(i) ;...
-        -plaidWidths_m(i)/2  plaidHeights_m(i)/2 depths_m(i) ]';
-    shape.disk.vertices{i} = ithDiskVertices;
+                        plaidWidths_m(i)/2 -plaidHeights_m(i)/2 depths_m(i) ;...
+                        plaidWidths_m(i)/2  plaidHeights_m(i)/2 depths_m(i) ;...
+                        -plaidWidths_m(i)/2  plaidHeights_m(i)/2 depths_m(i) ]';
+        shape.disk.vertices{i} = ithDiskVertices;
         shape.disk.listIds(i)  = glGenLists(1);
         glNewList(shape.disk.listIds(i), GL.COMPILE);
         glBindTexture(type, textureid(1));
@@ -151,16 +151,6 @@ for i = 1:numPlanes
         glBindTexture(type,0);
         glEndList();
 end
-
-
-apertPlaneSize_px         = diskSize_px*2;
-apertPlaneSize_deg        = apertPlaneSize_px*ds.deg_per_px;
-shape.disk.size_px        = diskSize_px; %not totally sure what units this is. glPointSize draws a square with equal sides in pixels, supposedly.
-shape.disk.size_m         = (1/ds.pixelsPerM)*sqrt(diskSize_px^2 + diskSize_px^2);
-shape.disk.size_deg       = diskSize_deg;
-shape.disk.aptPlane_px    = apertPlaneSize_px;
-shape.disk.aptPlane_m     = (1/ds.pixelsPerM)*sqrt(apertPlaneSize_px^2 + apertPlaneSize_px^2);
-shape.disk.aptPlane_deg   = apertPlaneSize_deg;
 
 
 shape.disk.numDisksPerPlane = numDisksPerPlane;
@@ -194,15 +184,15 @@ s2 = screenYpixels;
 [xm, ym] = meshgrid(-(s2/2)+1:s2/2, -(s1/2)+1:s1/2); %%ben flipped this, originally it was meshgrid(-(s2/2)+1:s2/2, -(s1/2)+1:s1/2);
 raisedCos = ones(size(xm));
 
-%       for i = 1:shape.plane.numPlanes
-%         x_px = shape.disk.xpos_deg{i} .* ds.hor_px_per_deg;
-%         y_px = shape.disk.ypos_deg{i} .* ds.ver_px_per_deg;
-%         for j = 1:shape.disk.numDisksPerPlane
-%             raisedCos = min(raisedCos, sqrt((xm + y_px(j)).^2 + (ym + x_px(j)).^2) > pa.apertureDia_px);
-%         end
-%       end
+      for i = 1:shape.plane.numPlanes
+        x_px = shape.disk.xpos_deg{i} .* ds.hor_px_per_deg;
+        y_px = shape.disk.ypos_deg{i} .* ds.ver_px_per_deg;
+        for j = 1:shape.disk.numDisksPerPlane
+            raisedCos = min(raisedCos, sqrt((xm + y_px(j)).^2 + (ym + x_px(j)).^2) > pa.apertureDia_px);
+        end
+      end
 % Create hole for fixation dot
-raisedCos = min(raisedCos, sqrt((xm + 0).^2 + (ym + 0).^2) > pa.apertureDia_px);
+%raisedCos = min(raisedCos, sqrt((xm + 0).^2 + (ym + 0).^2) > pa.apertureDia_px);
 %       figure; imagesc(raisedCos)
 %x_px(j)
 % to make a grid,uncomment:

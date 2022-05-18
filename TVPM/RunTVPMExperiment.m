@@ -1,4 +1,4 @@
-function RunTVPMExperiment(subjectInitials,condition,monocularFlag,trainingFlag,mask)
+function RunTVPMExperiment(subjectInitials,condition,monocularFlag,trainingFlag,mask, streamToHMDFlag)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% INFO %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Authors:     Charlie Burlingham and Jonathan Trattner, based on code by
 %              Jackie Fulvio and Bas Rokers
@@ -25,9 +25,10 @@ addpath(genpath(pwd));
 
 %% Init input variables
 
-pa.subjectName = subjectInitials; % initials of participant
-ds.experimentType = condition; % 'real', 'simulated', 'tvpmsd', 'tvpmmask'
-ds.monocularFlag = monocularFlag; % 1: monocular viewing, 2: binocular viewing
+pa.subjectName     = subjectInitials; % initials of participant
+ds.experimentType  = condition; % 'real', 'simulated', 'tvpmsd', 'tvpmmask'
+ds.monocularFlag   = monocularFlag; % 1: monocular viewing, 2: binocular viewing
+ds.oculusConnected = streamToHMDFlag; %1: show image in hmd, 0: show image in monitor
 pa.TRAINING = trainingFlag; % 1 for training runs (will run two runs without rotation), or 0 for experiment (18 runs, all rotation velocities and headings)
 
 global DEBUG_FLAG MONOCULAR AUDIO
@@ -137,7 +138,7 @@ kb.nextTrialKey = 0;
 
 while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
     if ds.tvpmsd
-        %[vXw, vYw, shape] = Preprocess(ds, pa, shape, GL);% m/f in world coords
+       % [vXw, vYw, shape] = Preprocess(ds, pa, shape, GL);% m/f in world coords
     end
     while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
         ds.fCount = ds.fCount + 1; % frame count
@@ -151,27 +152,27 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     %disp(pa.trialNumber);
                 end
             end
-            if ds.tvpmsd
+            if ds.tvpmcd
                 % KEEP THIS BLOCK
                 for i = 1:shape.plane.numPlanes
-                    %posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
-                    %posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
+%                     posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
+%                     posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
                     
-                    %{
-                    % attempt at modulation
-                    displacementsX{i} = abs(shape.disk.X_m{i}-posX{i});
-                    displacementsY{i} = abs(shape.disk.Y_m{i}-posY{i});
                     
-                    for jj = 1:length(posX{i})
-                        if displacementsX{i}(jj) >= shape.cyc_m(i)
-                            posX{i}(jj) = shape.disk.X_m{i}(jj);
-                        end
-                        
-                        if displacementsY{i}(jj) >= shape.cyc_m(i)
-                            posY{i}(jj) = shape.disk.Y_m{i}(jj);
-                        end
-                    end
-                    %}
+%                     attempt at modulation
+%                     displacementsX{i} = abs(shape.disk.X_m{i}-posX{i});
+%                     displacementsY{i} = abs(shape.disk.Y_m{i}-posY{i});
+%                     
+%                     for jj = 1:length(posX{i})
+%                         if displacementsX{i}(jj) >= shape.cyc_m(i)
+%                             posX{i}(jj) = shape.disk.X_m{i}(jj);
+%                         end
+%                         
+%                         if displacementsY{i}(jj) >= shape.cyc_m(i)
+%                             posY{i}(jj) = shape.disk.Y_m{i}(jj);
+%                         end
+%                     end
+                    
                     
                 end
                 %ds.fCount;
@@ -237,13 +238,13 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 
                 Screen('SelectStereoDrawbuffer', ds.w, eye.eyeIndex); % Select 'eyeIndex' to render (left- or right-eye):
                 
-                if ds.simulated
+                if ds.simulated %|| ds.oculusConnected
                     modelView = eye.modelView;
                 else
                     % Force camera for each eye using modelView specified
                     % by Bas. Change back to eye.modelView non-fixed normal
                     % camera behavior
-                    modelView = oc.defaultState.modelView{renderPass+1};%eye.modelView; % Extract modelView matrix for this eye:
+                    modelView = oc.defaultState.modelView{renderPass+1};%; % Extract modelView matrix for this eye:
                 end
                 
                 
@@ -335,38 +336,31 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         if mask == 1, drawTheHoleyBag(ds, 1), end % draws the ptb mask. Params: drawTheHoleyBag(window,[openglEnbled = 1]);
                     elseif ds.tvpmsd
                         % Draw Plaids
-%                         glEnable(GL.POINT_SPRITE);
-%                         for i = 1:shape.plane.numPlanes
-%                             glBindTexture(type, shape.disk.texture.id)
-%                             moglDrawDots3D(ds.w, [posX{i}, posY{i}, shape.disk.Z_m{i} + .002]', shape.disk.size_px, [], [], 0);
-%                             glBindTexture(type, 0);
-%                         end
-%                         glDisable(GL.POINT_SPRITE);
-                        %glBindTexture(type, shape.disk.texture.id);
+                        glBindTexture(type, shape.disk.texture.id);
                         for y = 1:shape.plane.numPlanes
                             for z = 1:shape.disk.numDisksPerPlane
                                 glPushMatrix;
-                                glTranslatef(posX{y}(z), posY{y}(z), shape.disk.Z_m{y}(z)+.002)
+                                glTranslatef(posX{y}(z), posY{y}(z), 0.002)
                                 glCallList(shape.disk.listIds(y))
                                 glPopMatrix;
                             end
                         end
-                        %glBindTexture(type, 0);
+                        glBindTexture(type, 0);
                         %{ Draw the 3 masks for TVPM Full %}
-%                         glPushMatrix;
-%                         glTranslatef(-shape.mask.widths_m(1), 0.0, 0.0);
-%                         glCallList(shape.mask.listIds(1));
-%                         glPopMatrix;
-%                         
-%                         glPushMatrix;
-%                         glTranslatef(0.0, 0.0, 0.0);
-%                         glCallList(shape.mask.listIds(2));
-%                         glPopMatrix;
-%                         
-%                         glPushMatrix;
-%                         glTranslatef(shape.mask.widths_m(3), 0.0, 0.0);
-%                         glCallList(shape.mask.listIds(3));
-%                         glPopMatrix;
+                        glPushMatrix;
+                        glTranslatef(-shape.mask.widths_m(1), 0.0, 0.0);
+                        glCallList(shape.mask.listIds(1));
+                        glPopMatrix;
+                        
+                        glPushMatrix;
+                        glTranslatef(0.0, 0.0, 0.0);
+                        glCallList(shape.mask.listIds(2));
+                        glPopMatrix;
+                        
+                        glPushMatrix;
+                        glTranslatef(shape.mask.widths_m(3), 0.0, 0.0);
+                        glCallList(shape.mask.listIds(3));
+                        glPopMatrix;
                         
                         % Draw fixation dot
 
@@ -388,19 +382,19 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         % Draw the 3 plaid planes
                         glPushMatrix;
                         glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
-                        %gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
+                        gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
                         glCallList(shape.plane.listIds(1));
                         glPopMatrix;
                         
                         glPushMatrix;
                         glTranslatef(0.0, 0.0, 0.0);
-                        %gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
+                        gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
                         glCallList(shape.plane.listIds(2));
                         glPopMatrix;
                         
                         glPushMatrix;
                         glTranslatef(shape.plane.widths_m(3), 0.0, 0.0);
-                        %gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
+                        gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
                         glCallList(shape.plane.listIds(3));
                         glPopMatrix;
                         
@@ -683,7 +677,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
             modelView = oc.initialState.modelView{ds.renderPass + 1}; % Use per-eye modelView matrices
             
             % N/A, redundant compared to modelView above. pa.modelViewSaveOutForFixed{ds.renderPass + 1} =  oc.initialState.modelView{ds.renderPass + 1};
-            %glMatrixMode(GL.MODELVIEW) % BJ: 3/17 added glMatMode call, if you load modelView it makes sense that we should be in that mode.
+            glMatrixMode(GL.MODELVIEW) % BJ: 3/17 added glMatMode call, if you load modelView it makes sense that we should be in that mode.
             glLoadMatrixd(modelView);
             
             Screen('EndOpenGL', ds.w);
