@@ -20,20 +20,14 @@ function disk = diskPos(ds, disk, plane)
     disk.Y_m = {};
     disk.Z_m = {};
     
-    for i = 1:n             
-       % [xpos_deg, ypos_deg] = GetPointsRandom(ndp,  hFOV/(n) - hFOV/(2*n) + T(i),  vFOV - vFOV/2, disk.size_deg + .1);% .* hFOV/(n) - hFOV/(2*n) + T(i); 
-        %the gap is the plane width divided by two in degrees. hFOV/(2*n) is the plane width divided two: centers the coordinate system at screen zero before translating
-        %xPlaneWidth_deg = (b - a) + a + T(i); % rand range formula + offset of the plane (so the planes don't overlap)
-        
-       %yPlaneHeight_deg = vFOV - vFOV/2; %BJ: In GetRandomPoints the y parameter is named YWidth--I do not know why.
-        
-        %R_deg = sqrt(disk.aptPlane_deg^2 + disk.aptPlane_deg^2);
+    for i = 1:n
+        radius_deg = sqrt(disk.diskSize_deg^2 + disk.diskSize_deg^2);
+        [xpos_deg, ypos_deg] = GetPointsRandom(ndp, b*2-3, b_*2-3, radius_deg);
+        xpos_deg = xpos_deg + T(i);
         
         
-        xpos_deg = (b - a).* rand(ndp,1) + a + T(i); % rand range formula + offset of the plane (so the planes don't overlap)
-        ypos_deg = (b_ - a_).* rand(ndp,1) + a_;
-        
-        %[xpos_deg, ypos_deg] = GetPointsRandom(ndp, xPlaneWidth_deg, yPlaneWidth_deg, R_deg);
+        %xpos_deg = (b - a).* rand(ndp,1) + a + T(i); % rand range formula + offset of the plane (so the planes don't overlap)
+        %ypos_deg = (b_ - a_).* rand(ndp,1) + a_;
         
         %%positions of plaids in degrees, these get passed to optic flow
         disk.xpos_deg{i} =  xpos_deg;

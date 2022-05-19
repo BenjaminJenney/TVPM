@@ -92,11 +92,10 @@ shape.plane.numPlanes   = numPlanes;
 shape.plane.planes      = [shape.plane.near, shape.plane.mid, shape.plane.far];
 shape.plane.numVertices = numVertices;
 %% Set up texture and dimensions for the Disks and apertures
+diskSize_deg       = 2;
+diskTextureWidth   = diskSize_deg * ds.hor_px_per_deg; 
+diskTextureHeight  = diskTextureWidth;
 
-diskTextureWidth   = 32;
-diskTextureHeight  = 32;
-diskSize_px        = 32;
-diskSize_deg       = diskSize_px*ds.deg_per_px; %2.0714
 halfDiskTexWidth   = diskTextureWidth/2;
 halfDiskTexHeight  = diskTextureHeight/2;
 [shape.disk.texture.x,shape.disk.texture.y] = meshgrid(-halfDiskTexWidth+1:halfDiskTexWidth,-halfDiskTexHeight+1:halfDiskTexHeight);
@@ -155,6 +154,7 @@ end
 
 shape.disk.numDisksPerPlane = numDisksPerPlane;
 shape.disk.numDisks = shape.disk.numDisksPerPlane * shape.plane.numPlanes;
+shape.disk.diskSize_deg = diskSize_deg;
 shape.disk = diskPos(ds, shape.disk, shape.plane);
 
 
@@ -164,7 +164,8 @@ Screen('EndOpenGL', ds.w);
 % Unlike the other shapes the Full Window Mask is drawn with high level
 % PsychToolBox functions since the Full Window Mask essentially has no
 % depth and can be expressed with only 2 dimensions.
-
+apertureDia_deg = diskSize_deg;
+apertureRadius_px  = (apertureDia_deg/2)*ds.hor_px_per_deg;%sqrt((apertureDia_deg^2 + apertureDia_deg^2)*ds.hor_px_per_deg);
 
 %{ Force disparity of the Full Window Mask to match the disparity of the middle plane %}
 b = .067; % inter-pupillary distance in meters TODO: Figure out if there is a way to get IP from the headset instead of hardcoding.
@@ -188,7 +189,7 @@ raisedCos = ones(size(xm));
         x_px = shape.disk.xpos_deg{i} .* ds.hor_px_per_deg;
         y_px = shape.disk.ypos_deg{i} .* ds.ver_px_per_deg;
         for j = 1:shape.disk.numDisksPerPlane
-            raisedCos = min(raisedCos, sqrt((xm + y_px(j)).^2 + (ym + x_px(j)).^2) > pa.apertureDia_px);
+            raisedCos = min(raisedCos, sqrt((xm + y_px(j)).^2 + (ym + x_px(j)).^2) > apertureRadius_px);
         end
       end
 % Create hole for fixation dot
@@ -264,7 +265,7 @@ for i = 1:shape.plane.numPlanes
     x_px = shape.disk.X_px{i};
     y_px = shape.disk.Y_px{i};
     for j = 1:shape.disk.numDisksPerPlane
-        opaque = min(opaque, sqrt((x + x_px(j)).^2 + (y + y_px(j)).^2)>pa.apertureDia_px);
+        opaque = min(opaque, sqrt((x + x_px(j)).^2 + (y + y_px(j)).^2)>apertureRadius_px);
     end
     
     %planeAlphas{i} = opaque;
