@@ -165,11 +165,11 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
 %                     
 %                     for jj = 1:length(posX{i})
 %                         if displacementsX{i}(jj) >= shape.cyc_m(i)
-%                             posX{i}(jj) = shape.disk.X_m{i}(jj);
+%                             posX{i}(jj) = shape.disk.X_m{i}(jj) + abs(displacementsX{i}(jj)-shape.cyc_m(i)); % this modulates to the phase beyond the threshold if it crosses the threshold, preventing jumps
 %                         end
 %                         
 %                         if displacementsY{i}(jj) >= shape.cyc_m(i)
-%                             posY{i}(jj) = shape.disk.Y_m{i}(jj);
+%                             posY{i}(jj) = shape.disk.Y_m{i}(jj) + abs(displacementsY{i}(jj)-shape.cyc_m(i));
 %                         end
 %                     end
                     
