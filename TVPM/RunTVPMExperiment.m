@@ -138,11 +138,17 @@ kb.nextTrialKey = 0;
 
 while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
     if ds.tvpmsd
-       % [vXw, vYw, shape] = Preprocess(ds, pa, shape, GL);% m/f in world coords
+       [vXw, vYw, shape] = Preprocess(ds, pa, shape, GL);% m/f in world coords
     end
     while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
-        ds.fCount = ds.fCount + 1; % frame count
-        if (ds.tvpmcd || ds.tvpmsd) && ds.vbl <  pa.trialOnset + pa.targetMotionDuration  % if still presenting stim
+        
+        if ds.fCount >= 180
+            ds.fCount = 1;
+        else
+            ds.fCount = ds.fCount + 1; % frame count
+        end
+        
+        if (ds.tvpmsd) && ds.vbl <  pa.trialOnset + pa.targetMotionDuration  % if still presenting stim
             if ds.fCount == 1
                 clear posX; clear posY;
                 for i = 1:shape.plane.numPlanes
@@ -152,26 +158,26 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     %disp(pa.trialNumber);
                 end
             end
-            if ds.tvpmcd
+            if ds.tvpmsd
                 % KEEP THIS BLOCK
                 for i = 1:shape.plane.numPlanes
-%                     posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
-%                     posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
+                    posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
+                    posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
                     
                     
-%                     attempt at modulation
-%                     displacementsX{i} = abs(shape.disk.X_m{i}-posX{i});
-%                     displacementsY{i} = abs(shape.disk.Y_m{i}-posY{i});
-%                     
-%                     for jj = 1:length(posX{i})
-%                         if displacementsX{i}(jj) >= shape.cyc_m(i)
-%                             posX{i}(jj) = shape.disk.X_m{i}(jj) + abs(displacementsX{i}(jj)-shape.cyc_m(i)); % this modulates to the phase beyond the threshold if it crosses the threshold, preventing jumps
-%                         end
-%                         
-%                         if displacementsY{i}(jj) >= shape.cyc_m(i)
-%                             posY{i}(jj) = shape.disk.Y_m{i}(jj) + abs(displacementsY{i}(jj)-shape.cyc_m(i));
-%                         end
-%                     end
+                   % attempt at modulation
+                    displacementsX{i} = abs(shape.disk.X_m{i}-posX{i});
+                    displacementsY{i} = abs(shape.disk.Y_m{i}-posY{i});
+                    
+                    for jj = 1:length(posX{i})
+                        if displacementsX{i}(jj) >= shape.cyc_m(i)
+                            posX{i}(jj) = shape.disk.X_m{i}(jj) + abs(displacementsX{i}(jj)-shape.cyc_m(i)); % this modulates to the phase beyond the threshold if it crosses the threshold, preventing jumps
+                        end
+                        
+                        if displacementsY{i}(jj) >= shape.cyc_m(i)
+                            posY{i}(jj) = shape.disk.Y_m{i}(jj) + abs(displacementsY{i}(jj)-shape.cyc_m(i));
+                        end
+                    end
                     
                     
                 end
@@ -340,7 +346,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         for y = 1:shape.plane.numPlanes
                             for z = 1:shape.disk.numDisksPerPlane
                                 glPushMatrix;
-                                glTranslatef(posX{y}(z), posY{y}(z), 0.002)
+                                glTranslatef(posX{y}(z), posY{y}(z), 0.0)
                                 glCallList(shape.disk.listIds(y))
                                 glPopMatrix;
                             end

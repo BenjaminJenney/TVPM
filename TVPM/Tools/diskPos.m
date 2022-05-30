@@ -35,7 +35,7 @@ function disk = diskPos(ds, disk, plane)
         
         %%positions for holes in the masks for TVPMSD
         disk.X_px{i}  = (-1).*((disk.xpos_deg{i} + (2-i)*hFOV/3) .* ds.hor_px_per_deg); % convert to coordinate system of each individual plane in pixels, by going to center of each plane
-        disk.Y_px{i}  = (disk.ypos_deg{i} .* ds.ver_px_per_deg);
+        disk.Y_px{i}  = (disk.ypos_deg{i} .* ds.hor_px_per_deg);
         disk.Xpx_m = (-1).*(2 .* Z(i).* tand((disk.xpos_deg{i} + (2-i)*hFOV/3)./2));
         
         %%positions for holes in the full window mask

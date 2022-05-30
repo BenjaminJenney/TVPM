@@ -92,8 +92,8 @@ shape.plane.numPlanes   = numPlanes;
 shape.plane.planes      = [shape.plane.near, shape.plane.mid, shape.plane.far];
 shape.plane.numVertices = numVertices;
 %% Set up texture and dimensions for the Disks and apertures
-diskSize_deg       = 2;
-diskTextureWidth   = diskSize_deg * ds.hor_px_per_deg; 
+diskSize_deg       = 2.5;
+diskTextureWidth   = diskSize_deg * ds.ver_px_per_deg; 
 diskTextureHeight  = diskTextureWidth;
 
 halfDiskTexWidth   = diskTextureWidth/2;
@@ -164,7 +164,7 @@ Screen('EndOpenGL', ds.w);
 % Unlike the other shapes the Full Window Mask is drawn with high level
 % PsychToolBox functions since the Full Window Mask essentially has no
 % depth and can be expressed with only 2 dimensions.
-apertureDia_deg = diskSize_deg;
+apertureDia_deg = diskSize_deg/1.5;
 apertureRadius_px  = (apertureDia_deg/2)*ds.hor_px_per_deg;%sqrt((apertureDia_deg^2 + apertureDia_deg^2)*ds.hor_px_per_deg);
 
 %{ Force disparity of the Full Window Mask to match the disparity of the middle plane %}
@@ -187,7 +187,7 @@ raisedCos = ones(size(xm));
 
       for i = 1:shape.plane.numPlanes
         x_px = shape.disk.xpos_deg{i} .* ds.hor_px_per_deg;
-        y_px = shape.disk.ypos_deg{i} .* ds.ver_px_per_deg;
+        y_px = shape.disk.ypos_deg{i} .* ds.hor_px_per_deg;
         for j = 1:shape.disk.numDisksPerPlane
             raisedCos = min(raisedCos, sqrt((xm + y_px(j)).^2 + (ym + x_px(j)).^2) > apertureRadius_px);
         end

@@ -2,7 +2,7 @@ function [vXw, vYw, shape] = Preprocess(ds, pa,shape, GL)
 
 %hGratings = cell(360,1);
 numPlanes = shape.plane.numPlanes;
-sf =.1;% cycles per deg
+sf = .1;% cycles per deg
 sf = (ds.deg_per_px).*sf;%1/px_per_deg %convert from deg to
 %af = 2*pi*sf; % angular freq.
 nFrames = pa.nFrames; %

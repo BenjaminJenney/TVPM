@@ -69,7 +69,7 @@ else % Oculus not connected
     if ds.screenId % more than one screen connected, run fullscreen
         ds.winRect = [];
     else
-        ds.winRect = [0,0, 1792, 1120];
+        ds.winRect = [0,0, 1792, 1080];
     end
     %PsychImaging('AddTask', 'General', 'UseRetinaResolution');
     [ds.w, ds.windowRect] = PsychImaging('OpenWindow', ds.screenId, 0, ds.winRect, [], [], 4, ds.multiSample);  % CSB. split screen mode; "4" sets this
@@ -175,10 +175,10 @@ else % No hmd
     
     %     ds.hFOV_perPersonAvg = 28; %deg
     %     ds.vFOV_perPersonAvg = 18.5; %deg
-    ds.hFOV_perPersonAvg = 87; %deg
+    ds.hFOV_perPersonAvg = 84; %deg
     ds.vFOV_perPersonAvg = 84; %deg
     ds.screenRenderWidthMonocular_px = 1792/2;
-    ds.screenRenderHeightMonocular_px = 1120;
+    ds.screenRenderHeightMonocular_px = 1080;
     ds.hor_px_per_deg = ds.screenRenderWidthMonocular_px/ds.hFOV_perPersonAvg; %
     ds.ver_px_per_deg = ds.screenRenderHeightMonocular_px/ds.vFOV_perPersonAvg;
     ds.deg_per_px = 1/ds.hor_px_per_deg;
@@ -186,7 +186,7 @@ else % No hmd
     ds.pixelsPerM = 1792/0.2159;
     
     ds.textCoords = [ds.screenRenderWidthMonocular_px/2 ds.screenRenderHeightMonocular_px/2];
-    
+    ds.focalLength = 1.2;
 end
 
 

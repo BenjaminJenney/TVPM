@@ -158,7 +158,7 @@ pa.heading = NaN(pa.nTrials,1);
 pa.quitFlag = 0; % don't give up
 
 %% Params for TVPMSD and TVPMCD
-pa.sf = 2;
+pa.sf = 1.5;
 pa.apertureDia_px = floor(1 * ds.hor_px_per_deg); % Size of the holes for both TVPMSD and TVPMCD.
 
         end
