@@ -38,7 +38,7 @@ for ii = 1:pa.nTrials %pa.nTrials = 60 ; BJ: Number of frames per trial is depen
     dRho   = gradient(rho);
     omegaY = deg2rad(dRho)./ds.ifi; % rad/s
     h = rho+theta0; % deg, current heading angle
-    
+   
     T = [s.*sind(h); zeros(1,length(h)); s.*cosd(h)]; % heading angle = theta0+rho, m/s
     for t = 1:nFrames %90*.8
         %for renderPass = 0:1   
@@ -59,21 +59,26 @@ for ii = 1:pa.nTrials %pa.nTrials = 60 ; BJ: Number of frames per trial is depen
             % for each render pass create the current texture frame for
             % each disk
             
-            %                1) in preprocess.m, make optic flow for every frame, trial, eye.
+            % 1) in preprocess.m, make optic flow for every frame, trial, eye.
             % 2) in preprocess.m, make vertical and horizontal phases for every frame, trial, eye  (these will be indices to index into grating array in runexpt..)
             % 3) in preprocess.m, make a 360-long struct containing one grating shifted by every possible phase.
             % 4) in RunTVPMExperiment.m, for every frame, make the image for every plaid by indexing into the right phase for each component grating, then transpose one of them that's vertical, and sum them together, and normalize. then repmat to get three channels and permute [if this is slowing everything down, then make the pre-generated grating 3 dimensional first]
             % 5) bind textures and render.
             
-%             hPhaseTmp = 0;
-%             vPhaseTmp = 0;
+            % hPhaseTmp = 0;
+            % vPhaseTmp = 0;
+            
             for i = 1:numPlanes
                 [vX, vY] = opticFlow(ds, pa, shape.disk.xpos_deg{i}, shape.disk.ypos_deg{i}, shape.plane.planes(i), 1050, curMV, t, omegaY, T); % deg/s
 
-                vXw_s = 2.*planeDist_m(i).*tand(vX./2); % m/s in world coords
+                
+                vXsave(ii, t, i, :) = vX;
+                vYsave(ii, t, i, :) = vY;
+                
+                vXw_s = 2.*-planeDist_m(i).*tand(vX./2); % m/s in world coords
                 vXw(ii, t, i, :) = vXw_s.*(pa.stimulusDuration_sec./pa.nFrames); % m/f in world coords
                 
-                vYw_s = 2.*planeDist_m(i).*tand(vY./2); % m/s in world coords
+                vYw_s = 2.*-planeDist_m(i).*tand(vY./2); % m/s in world coords
                 vYw(ii, t, i, :) = vYw_s.*(pa.stimulusDuration_sec./pa.nFrames); % m/f in world coords
                  
 %                 v = (1/ds.deg_per_px).*vY; % vX and vY are vectors of optic flow for all 180 dots per plane
@@ -83,11 +88,19 @@ for ii = 1:pa.nTrials %pa.nTrials = 60 ; BJ: Number of frames per trial is depen
 %                 vPhaseTmp = vPhaseTmp + ((2 .* pi .* (u .* (1./1000) .* sf)) ./ ifi);
 %                 
 %                 hPhase(ii,t,renderPass+1,i,:) = single(round(wrapTo360(rad2deg(hPhaseTmp)))); %index for gratings
-%                 vPhase(ii,t,renderPass+1,i,:) = single(round(wrapTo360(rad2deg(vPhaseTmp)))); %index for gratings  
-            end           
-        %end      
+%                 vPhase(ii,t,renderPass+1,i,:) = single(round(wrapTo360(rad2deg(vPhaseTmp)))); %index for gratings
+            end
+        %end
     end    
 end
+
+% to debug: plot flow field (deg) and deisplacement field (m) side by side- should look the same
+% xdeg = shape.disk.xpos_deg{1};
+% ydeg = shape.disk.ypos_deg{1};
+% coords = [xdeg, ydeg];
+%     figure; subplot(2,1,1); quiver(xdeg,ydeg,squeeze(vXsave(3,30,1,:)),squeeze(vYsave(3,30,1,:)),1);
+%     subplot(2,1,2); quiver3(shape.disk.X_m{1},shape.disk.Y_m{1},shape.disk.Z_m{1},squeeze(vXw(3,30,1,:)),squeeze(vYw(3,30,1,:)),ones(10,1)*0,1)
+% 
 
 % debug CSB jan 24 2022
 % figure;

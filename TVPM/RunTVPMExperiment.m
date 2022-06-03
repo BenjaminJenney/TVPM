@@ -44,7 +44,7 @@ AUDIO = 1; % to override and have feedback even when you're not training
 
 if DEBUG_FLAG == 1
     %Screen('Preference', 'SkipSyncTests', 1); % For debugging, old
-    PsychDebugWindowConfiguration([],1); % display on monitor at half opacity in addition to in the HMD
+    PsychDebugWindowConfiguration([],.7); % display on monitor at half opacity in addition to in the HMD
 end
 
 %% Setup Psychtoolbox for OpenGL 3D rendering support

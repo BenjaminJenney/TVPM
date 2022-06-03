@@ -4,11 +4,25 @@ global GL;
 Screen('BeginOpenGL', ds.w);
 type = GL.TEXTURE_2D;
 %% Set up texture and dimensions for the three planes
+planeWidth_deg  = ds.hFOV_perPersonAvg/3; % 
+planeHeight_deg = ds.vFOV_perPersonAvg;
 
-planeTextureWidth_px   = (ds.hFOV_perPersonAvg/3) * ds.hor_px_per_deg;
-planeTextureHeight_px  = (ds.vFOV_perPersonAvg) * ds.ver_px_per_deg;
+planeTextureWidth_px  = planeWidth_deg * ds.hor_px_per_deg;
+planeTextureHeight_px = planeHeight_deg * ds.ver_px_per_deg;
+
 shape.plane.TextureWidth_px = planeTextureWidth_px;
 shape.plane.TextureHeight_px  = planeTextureHeight_px;
+
+% Convert degrees to meters(OpenGL coordinates) using visual angle formula.
+depths_m  = [-.5, -1, -2]; % near, mid, far.
+numPlanes = length(depths_m);
+widths_m  = zeros(1, numPlanes);
+heights_m = zeros(1, numPlanes);
+for i = 1:numPlanes
+    widths_m(i)  = 2 * -depths_m(i) * tand((ds.hFOV_perPersonAvg/numPlanes)/2);
+    heights_m(i) = (2 * -depths_m(i) * tand(ds.vFOV_perPersonAvg/2));
+end
+
 xHalfTextureSize = planeTextureWidth_px/2;
 yHalfTextureSize = floor(planeTextureHeight_px/2);
 
@@ -70,9 +84,11 @@ for i = 1:numPlanes
     glEndList();
 end
 
-shape.plane.depths_m      = depths_m;
-shape.plane.widths_m      = widths_m;
-shape.plane.heights_m     = heights_m;
+shape.plane.offsets_deg = [-planeWidth_deg, 0, planeWidth_deg];
+
+shape.plane.depths_m    = depths_m;
+shape.plane.widths_m    = widths_m;
+shape.plane.heights_m   = heights_m;
 shape.plane.near.width_m  = widths_m(1);
 shape.plane.near.height_m = heights_m(1);
 shape.plane.near.depth_m  = depths_m(1);
@@ -82,7 +98,6 @@ shape.plane.mid.depth_m   = depths_m(2);
 shape.plane.far.width_m   = widths_m(3);
 shape.plane.far.height_m  = heights_m(3);
 shape.plane.far.depth_m   = depths_m(3);
-
 shape.plane.near.offset = -shape.plane.near.width_m;
 shape.plane.mid.offset  = 0;
 shape.plane.far.offset  = shape.plane.far.width_m;
@@ -92,6 +107,7 @@ shape.plane.numPlanes   = numPlanes;
 shape.plane.planes      = [shape.plane.near, shape.plane.mid, shape.plane.far];
 shape.plane.numVertices = numVertices;
 %% Set up texture and dimensions for the Disks and apertures
+
 diskSize_deg       = 2.5;
 diskTextureWidth   = diskSize_deg * ds.ver_px_per_deg; 
 diskTextureHeight  = diskTextureWidth;
@@ -101,6 +117,15 @@ halfDiskTexHeight  = diskTextureHeight/2;
 [shape.disk.texture.x,shape.disk.texture.y] = meshgrid(-halfDiskTexWidth+1:halfDiskTexWidth,-halfDiskTexHeight+1:halfDiskTexHeight);
 shape.disk.texture.width  = diskTextureWidth;
 shape.disk.texture.height = diskTextureHeight;
+
+ 
+numDisksPerPlane = 10;
+shape.disk.numDisksPerPlane = numDisksPerPlane;
+shape.disk.numDisks = shape.disk.numDisksPerPlane * shape.plane.numPlanes;
+shape.disk.diskSize_deg = diskSize_deg;
+
+shape.disk = diskPos(ds, shape.disk, shape.plane);
+
 sf        = pa.sf; %.1; % cycles per deg
 sf        = (ds.deg_per_px).*sf; %1/px_per_deg %convert from deg to
 af        = 2*pi*sf;
@@ -122,7 +147,7 @@ glBindTexture(type,0);
 
 shape.disk.texture.id = textureid(1);
 
-numDisksPerPlane = 10;
+
 
 for i = 1:numPlanes
     plaidWidths_m(i)  = 2 * -depths_m(i) * tand(diskSize_deg/2);
@@ -152,10 +177,6 @@ for i = 1:numPlanes
 end
 
 
-shape.disk.numDisksPerPlane = numDisksPerPlane;
-shape.disk.numDisks = shape.disk.numDisksPerPlane * shape.plane.numPlanes;
-shape.disk.diskSize_deg = diskSize_deg;
-shape.disk = diskPos(ds, shape.disk, shape.plane);
 
 
 Screen('EndOpenGL', ds.w);
@@ -218,7 +239,7 @@ alphaMask(:,:,1) = round(alphaMask(:,:,1),3,'significant');
 endCols          = alphaMask(round(abs(d_px)/2)+1:end,:,1);
 alphaMask(:,:,1) = 1;
 alphaMask(1:end - round(abs(d_px)/2),:,1) = endCols;
-bag(:,:,4)       = fliplr(flipud(alphaMask(:,:,1)'));
+bag(:,:,4)       = fliplr(alphaMask(:,:,1)');
 shape.mask.fullWindowMaskLeftEye = Screen('MakeTexture', ds.w, bag);
 
 %Left Eye
@@ -226,13 +247,14 @@ alphaMask(:,:,1) = raisedCos;%raisedCos; % restart Alpha with original raised co
 frontCols = alphaMask(1:end-round(abs(d_px)/2)+1,:,1); % Take the columns up to end (disparity shift)
 alphaMask(:,:,1) = 1; % reset Alpha to completely opaque
 alphaMask(round(abs(d_px)/2):end,:,1) = frontCols; % paste to the end of the Alpha chanel
-bag(:,:,4) = fliplr(flipud(alphaMask(:,:,1)'));% circshift(mask(:,:,2)', 50,2);
+bag(:,:,4) = fliplr(alphaMask(:,:,1)');% circshift(mask(:,:,2)', 50,2);
 shape.mask.fullWindowMaskRightEye = Screen('MakeTexture', ds.w, bag);
 
 %% Masks for TVPM Full
 Screen('BeginOpenGL', ds.w);
+maskOpacity = 175; % for debugging purposes, opacity range = [0,255], where 255 is full opacity, 0 is completely translucent.
 
-shape.disk = diskPos(ds, shape.disk, shape.plane); % Get plaid positions for TVPM-Full, bounded by shape.plane
+% Get plaid positions for TVPM-Full, bounded by shape.plane
 
 corners = [0 0;
     1 0;
@@ -265,16 +287,15 @@ for i = 1:shape.plane.numPlanes
     x_px = shape.disk.X_px{i};
     y_px = shape.disk.Y_px{i};
     for j = 1:shape.disk.numDisksPerPlane
-        opaque = min(opaque, sqrt((x + x_px(j)).^2 + (y + y_px(j)).^2)>apertureRadius_px);
+        opaque = min(opaque, sqrt((x + x_px(j)).^2 + (y - y_px(j)).^2)>apertureRadius_px);
     end
     
-    %planeAlphas{i} = opaque;
     ithMaskVertices = [-maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
         maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
         maskWidths_m(i)/2  maskHeights_m(i)/2 maskDepths_m(i);...
         -maskWidths_m(i)/2  maskHeights_m(i)/2 maskDepths_m(i)]';
     
-    blackTexData(4,:,:) = shiftdim(255 .* opaque', -1);%
+    blackTexData(4,:,:) = shiftdim(maskOpacity .* opaque', -1);%
     
     shape.mask.texture(i) = Texture(GL, type, 2*maskTexHalfWidth, 2*maskTexHalfHeight, uint8(blackTexData));
     shape.mask.listIds(i) = glGenLists(1);
