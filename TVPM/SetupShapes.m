@@ -73,7 +73,7 @@ for i = 1:numPlanes
     shape.plane.vertices{i} = ithPlaneVertices;
     shape.plane.listIds(i)  = glGenLists(1);
     glNewList(shape.plane.listIds(i), GL.COMPILE);
-    shape.plane.textures(i).bind;
+    shape.plane.textures(i).bind; % applies the appropriate texture to the geometry set up by listIds.
     glBegin(GL.POLYGON);
     for j = 1:numVertices
         glTexCoord2dv(corners(j,:));
@@ -165,7 +165,7 @@ for i = 1:numPlanes
         shape.disk.vertices{i} = ithDiskVertices;
         shape.disk.listIds(i)  = glGenLists(1);
         glNewList(shape.disk.listIds(i), GL.COMPILE);
-        glBindTexture(type, textureid(1));
+        glBindTexture(type, textureid(1)); % applies the appropriate texture to the geometry set up by listIds.
         glBegin(GL.POLYGON);
         for j = 1:numVertices
             glTexCoord2dv(corners(j,:));
@@ -252,7 +252,7 @@ shape.mask.fullWindowMaskRightEye = Screen('MakeTexture', ds.w, bag);
 
 %% Masks for TVPM Full
 Screen('BeginOpenGL', ds.w);
-maskOpacity = 175; % for debugging purposes, opacity range = [0,255], where 255 is full opacity, 0 is completely translucent.
+maskOpacity = 255; % for debugging purposes, opacity range = [0,255], where 255 is full opacity, 0 is completely translucent.
 
 % Get plaid positions for TVPM-Full, bounded by shape.plane
 

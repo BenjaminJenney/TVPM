@@ -137,8 +137,9 @@ kb.nextTrialKey = 0;
 
 
 while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
+    % ATTN: MAKE POSITION UPDATE MODULAR 
     if ds.tvpmsd
-       [vXw, vYw, shape] = Preprocess(ds, pa, shape, GL);% m/f in world coords
+       %[vXw, vYw, shape] = Preprocess(ds, pa, shape, GL);% m/f in world coords
     end
     while (pa.trialNumber < pa.nTrials) && ~kb.keyCode(kb.escapeKey) % wait until all of the trials have been completed or the escape key is pressed to quit out
         
@@ -158,32 +159,32 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     %disp(pa.trialNumber);
                 end
             end
-            if ds.tvpmsd
-                % KEEP THIS BLOCK
-                for i = 1:shape.plane.numPlanes
-                    posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
-                    posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
-                    
-                    
-                   % attempt at modulation
-                    displacementsX{i} = abs(shape.disk.X_m{i}-posX{i});
-                    displacementsY{i} = abs(shape.disk.Y_m{i}-posY{i});
-                    
-                    for jj = 1:length(posX{i})
-                        if displacementsX{i}(jj) >= shape.cyc_m(i)
-                            posX{i}(jj) = shape.disk.X_m{i}(jj) + abs(displacementsX{i}(jj)-shape.cyc_m(i)); % this modulates to the phase beyond the threshold if it crosses the threshold, preventing jumps
-                        end
-                        
-                        if displacementsY{i}(jj) >= shape.cyc_m(i)
-                            posY{i}(jj) = shape.disk.Y_m{i}(jj) + abs(displacementsY{i}(jj)-shape.cyc_m(i));
-                        end
-                    end
-                    
-                    
-                end
-                %ds.fCount;
-                
-            end
+%             if ds.tvpmsd
+%                 % KEEP THIS BLOCK
+%                 for i = 1:shape.plane.numPlanes
+%                     posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
+%                     posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
+%                     
+%                     % ATTN: MAKE MODULATION MODULAR
+%                    % attempt at modulation
+%                     displacementsX{i} = shape.disk.X_m{i}-posX{i};
+%                     displacementsY{i} = shape.disk.Y_m{i}-posY{i};
+%                     
+%                     for jj = 1:length(posX{i})
+%                         if displacementsX{i}(jj) >= shape.cyc_m(i)
+%                             posX{i}(jj) = shape.disk.X_m{i}(jj) + -sign(displacementsX{i}(jj))*(abs(displacementsX{i}(jj))-shape.cyc_m(i)); % this modulates to the phase beyond the threshold if it crosses the threshold, preventing jumps
+%                         end
+%                         
+%                         if displacementsY{i}(jj) >= shape.cyc_m(i)
+%                             posY{i}(jj) = shape.disk.Y_m{i}(jj) + -sign(displacementsY{i}(jj))*(abs(displacementsY{i}(jj))-shape.cyc_m(i));
+%                         end
+%                     end
+%                     
+%                     
+%                 end
+%                 %ds.fCount;
+%                 
+%             end
         end
         
         if isempty(ds.hmd) % Oculus is not connected - will display a poor imitation of the Oculus rift on your main computer screen
@@ -341,17 +342,14 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         glPopMatrix;
                         if mask == 1, drawTheHoleyBag(ds, 1), end % draws the ptb mask. Params: drawTheHoleyBag(window,[openglEnbled = 1]);
                     elseif ds.tvpmsd
-                        % Draw Plaids
-                        glBindTexture(type, shape.disk.texture.id);
-                        for y = 1:shape.plane.numPlanes
-                            for z = 1:shape.disk.numDisksPerPlane
-                                glPushMatrix;
-                                glTranslatef(posX{y}(z), posY{y}(z), 0.0)
-                                glCallList(shape.disk.listIds(y))
-                                glPopMatrix;
-                            end
-                        end
-                        glBindTexture(type, 0);
+                        
+                        drawPlaidsForTVPMSD(type,... 
+                                            shape.disk.texture.id,...
+                                            shape.disk.listIds,...
+                                            shape.plane.numPlanes,...
+                                            shape.disk.numDisksPerPlane,... 
+                                            posX, posY)
+                                        
                         %{ Draw the 3 masks for TVPM Full %}
                         glPushMatrix;
                         glTranslatef(-shape.mask.widths_m(1), 0.0, 0.0);
@@ -369,7 +367,8 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         glPopMatrix;
                         
                         % Draw fixation dot
-
+                        % window, modelview, shape.plane.depths(2) (depth of the
+                        % middle plane), pa.fixationDiameter
                         glPushMatrix;
                         curModelViewNoTranslation1 = glGetFloatv(GL.MODELVIEW_MATRIX);
                         curModelViewNoTranslation2 = [curModelViewNoTranslation1(1:4),curModelViewNoTranslation1(5:8),curModelViewNoTranslation1(9:12),[0 0 0 1]']; % CSB, 4/12/2022- had to use the GL modelview without translation to make the fixation pt at right depth. it was broken b4 using eye.modelView. figure out why
