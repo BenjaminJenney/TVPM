@@ -1,4 +1,4 @@
-function drawPlaidPlanesForTVPMCD(plaidPlaneWidths_m, listIds, xDisplacement, zDisplacement)
+function drawPlaidPlanesForTVPMCD(plaidPlaneWidths_m, listIds, xDisplacement, zDisplacement, middlePlaneDepth)
     % draws the three plaid planes set up in SetupShape.
     %
     % INPUT:
@@ -11,19 +11,19 @@ function drawPlaidPlanesForTVPMCD(plaidPlaneWidths_m, listIds, xDisplacement, zD
     
     glPushMatrix;
     glTranslatef(-plaidPlaneWidths_m(1), 0.0, 0.0);
-    gluLookAt(-xDisplacement,0,-zDisplacement,0,0,-15,0,1,0)
+    gluLookAt(-xDisplacement,0,-zDisplacement,0,0,middlePlaneDepth,0,1,0)
     glCallList(listIds(1));
     glPopMatrix;
 
     glPushMatrix;
     glTranslatef(0.0, 0.0, 0.0);
-    gluLookAt(-xDisplacement,0,-zDisplacement,0,0,-15,0,1,0)
+    gluLookAt(-xDisplacement,0,-zDisplacement,0,0,middlePlaneDepth,0,1,0)
     glCallList(listIds(2));
     glPopMatrix;
 
     glPushMatrix;
     glTranslatef(plaidPlaneWidths_m(3), 0.0, 0.0);
-    gluLookAt(-xDisplacement,0,-zDisplacement,0,0,-15,0,1,0)
+    gluLookAt(-xDisplacement,0,-zDisplacement,0,0,middlePlaneDepth,0,1,0)
     glCallList(listIds(3));
     glPopMatrix;
 

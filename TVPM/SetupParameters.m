@@ -29,7 +29,7 @@ pa.baseDir = pwd;
 %pa.Desktop = [pa.Desktop '\'];
 
 
-%% Parameters of all visual objects - stimulus, targets, etc.
+%% Training experiment Parameters
 
 pa.instructionDisparity = 200; % arbitrary and in pixels, for instruction text
 
