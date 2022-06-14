@@ -1,8 +1,22 @@
 function shape = SetupShapes(ds, pa)
+
+% Some explanation of OpenGL variables:
+%
+% . listIds is an array of integers (Call List Ids) that correspond to a block of code in SetupShapes responsible for setting up
+%   the vertices and shape type to be rendered to the screen. As such the listIds are like identifiers for macros.
+%
+% . textureId is an integer that corresponds to the plaid texture to be
+%   drawn on the plaids. Each plaid has the same texture, so there is only
+%   one texture id.
+%
+% . openglTextureType is a variable global to SetupShapes and should always
+%   be set to GL.Texture_2D since we are drawing 2d textures (that just happen to be projected into virtual 3d space).
+
 InitializeMatlabOpenGL(1);
 global GL;
 Screen('BeginOpenGL', ds.w);
 type = GL.TEXTURE_2D;
+
 %% Set up texture and dimensions for the three planes
 planeWidth_deg  = ds.hFOV_perPersonAvg/3; % 
 planeHeight_deg = ds.vFOV_perPersonAvg;
@@ -13,14 +27,16 @@ planeTextureHeight_px = planeHeight_deg * ds.ver_px_per_deg;
 shape.plane.TextureWidth_px = planeTextureWidth_px;
 shape.plane.TextureHeight_px  = planeTextureHeight_px;
 
-% Convert degrees to meters(OpenGL coordinates) using visual angle formula.
 depths_m  = [-.5, -1, -2]; % near, mid, far.
 numPlanes = length(depths_m);
+
+% Convert degrees to meters(OpenGL coordinates) using visual angle formula.
 widths_m  = zeros(1, numPlanes);
 heights_m = zeros(1, numPlanes);
+
 for i = 1:numPlanes
-    widths_m(i)  = 2 * -depths_m(i) * tand((ds.hFOV_perPersonAvg/numPlanes)/2);
-    heights_m(i) = (2 * -depths_m(i) * tand(ds.vFOV_perPersonAvg/2));
+    widths_m(i)  = 2 * -depths_m(i) * tand((ds.hFOV_perPersonAvg/numPlanes)/2); % Visual Angle Formula
+    heights_m(i) = (2 * -depths_m(i) * tand(ds.vFOV_perPersonAvg/2)); % Visual Angle Formula
 end
 
 xHalfTextureSize = planeTextureWidth_px/2;
@@ -33,7 +49,7 @@ midPlaneAlpha = ones(size(x));
 % All three plaid are painted with the same texture data
 % (staticPliadData),
 % except midPlane needs a hole in its alpha chanel (alpha chanel = 4th index)
-fixationDotSize_px = 15; % ATTN: convert to deg!
+fixationDotSize_px = pa.apertureDia_px;%pa.fixationDiameter; % ATTN!!!!!: convert to deg! WHAT IS GOING ON WITH THIS!
 shape.plane.textureData  = staticPlaidData(ds, pa.sf, x, y);
 midPlaneAlpha   = min(midPlaneAlpha, sqrt(x.^2 + y.^2) > fixationDotSize_px);%Cut out hole for fixation dot
 midPlaneTexData = shape.plane.textureData;
@@ -213,6 +229,7 @@ raisedCos = ones(size(xm));
             raisedCos = min(raisedCos, sqrt((xm + y_px(j)).^2 + (ym + x_px(j)).^2) > apertureRadius_px);
         end
       end
+      raisedCos = min(raisedCos, sqrt(xm.^2 + ym.^2) > apertureRadius_px);
 % Create hole for fixation dot
 %raisedCos = min(raisedCos, sqrt((xm + 0).^2 + (ym + 0).^2) > pa.apertureDia_px);
 %       figure; imagesc(raisedCos)
@@ -288,6 +305,10 @@ for i = 1:shape.plane.numPlanes
     y_px = shape.disk.Y_px{i};
     for j = 1:shape.disk.numDisksPerPlane
         opaque = min(opaque, sqrt((x + x_px(j)).^2 + (y - y_px(j)).^2)>apertureRadius_px);
+    end
+    
+    if i == 2
+        opaque = min(opaque, sqrt(x.^2 + y.^2) > fixationDotSize_px) ; % cut out hole in middle mask for fixation dot
     end
     
     ithMaskVertices = [-maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...

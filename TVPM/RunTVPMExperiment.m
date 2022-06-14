@@ -165,7 +165,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
 %                     posX{i} = posX{i} + squeeze(vXw(pa.trialNumber, ds.fCount, i, :));
 %                     posY{i} = posY{i} + squeeze(vYw(pa.trialNumber, ds.fCount, i, :));
 %                     
-%                     % ATTN: MAKE MODULATION MODULAR
+%                    % ATTN: MAKE MODULATION MODULAR
 %                    % attempt at modulation
 %                     displacementsX{i} = shape.disk.X_m{i}-posX{i};
 %                     displacementsY{i} = shape.disk.Y_m{i}-posY{i};
@@ -343,78 +343,29 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                         if mask == 1, drawTheHoleyBag(ds, 1), end % draws the ptb mask. Params: drawTheHoleyBag(window,[openglEnbled = 1]);
                     elseif ds.tvpmsd
                         
-                        drawPlaidsForTVPMSD(type,... 
-                                            shape.disk.texture.id,...
-                                            shape.disk.listIds,...
+                        drawFixationDot(GL, ds.w, pa.fixationDiameter, shape.plane.depths_m(2));
+                        
+                        drawPlaidsForTVPMSD(shape.disk.listIds,...
                                             shape.plane.numPlanes,...
                                             shape.disk.numDisksPerPlane,... 
-                                            posX, posY)
-                                        
-                        %{ Draw the 3 masks for TVPM Full %}
-                        glPushMatrix;
-                        glTranslatef(-shape.mask.widths_m(1), 0.0, 0.0);
-                        glCallList(shape.mask.listIds(1));
-                        glPopMatrix;
-                        
-                        glPushMatrix;
-                        glTranslatef(0.0, 0.0, 0.0);
-                        glCallList(shape.mask.listIds(2));
-                        glPopMatrix;
-                        
-                        glPushMatrix;
-                        glTranslatef(shape.mask.widths_m(3), 0.0, 0.0);
-                        glCallList(shape.mask.listIds(3));
-                        glPopMatrix;
-                        
-                        % Draw fixation dot
-                        % window, modelview, shape.plane.depths(2) (depth of the
-                        % middle plane), pa.fixationDiameter
-                        glPushMatrix;
-                        curModelViewNoTranslation1 = glGetFloatv(GL.MODELVIEW_MATRIX);
-                        curModelViewNoTranslation2 = [curModelViewNoTranslation1(1:4),curModelViewNoTranslation1(5:8),curModelViewNoTranslation1(9:12),[0 0 0 1]']; % CSB, 4/12/2022- had to use the GL modelview without translation to make the fixation pt at right depth. it was broken b4 using eye.modelView. figure out why
-                        moglDrawDots3D(ds.w, [[0 0 shape.plane.depths_m(2)+.01], 1.0]', pa.fixationDiameter, [], [], 2); %drawing horizontal fixation dot
-                        glPopMatrix;
+                                            posX, posY); % draws the plaids bounded by the 3 planes (numPlanes = 3) these are the same 3 planes drawn in TVPMCD
+                                          
+                        drawMasksForTVPMSD(shape.mask.widths_m, shape.mask.listIds); % Draw the three masks for TVPMSD. The masks are projected .001 meters in front of the plaids (and as such are marginally different in size from the three planes drawn in TVPMCD). So there depths are shape.plane.depths_m - .001. See SetupShapes for reference. 
                         
                     elseif ds.tvpmcd
                         
                         % Draw fixation dot
-                        glPushMatrix;
-                        curModelViewNoTranslation1 = glGetFloatv(GL.MODELVIEW_MATRIX);
-                        curModelViewNoTranslation2 = [curModelViewNoTranslation1(1:4),curModelViewNoTranslation1(5:8),curModelViewNoTranslation1(9:12),[0 0 0 1]']; % CSB, 4/12/2022- had to use the GL modelview without translation to make the fixation pt at right depth. it was broken b4 using eye.modelView. figure out why
-                        moglDrawDots3D(ds.w, inv(curModelViewNoTranslation2)*[[0 0 shape.plane.depths_m(2)], 1.0]', pa.fixationDiameter, [], [], 2); %drawing horizontal fixation dot
-                        glPopMatrix;
+                        drawFixationDot(GL, ds.w, pa.fixationDiameter, shape.plane.depths_m(2));
                         
                         % Draw the 3 plaid planes
-                        glPushMatrix;
-                        glTranslatef(-shape.plane.widths_m(1), 0.0, 0.0);
-                        gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
-                        glCallList(shape.plane.listIds(1));
-                        glPopMatrix;
+                        drawPlaidPlanesForTVPMCD(shape.plane.widths_m, shape.plane.listIds, xDotDisplacement, zDotDisplacement);
                         
-                        glPushMatrix;
-                        glTranslatef(0.0, 0.0, 0.0);
-                        gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
-                        glCallList(shape.plane.listIds(2));
-                        glPopMatrix;
-                        
-                        glPushMatrix;
-                        glTranslatef(shape.plane.widths_m(3), 0.0, 0.0);
-                        gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,-15,0,1,0)
-                        glCallList(shape.plane.listIds(3));
-                        glPopMatrix;
-                        
-                        % Draw the full screen mask aka 'The holey bag'
+                        % Draw the full screen mask
                         if renderPass == 0
-                            glPushMatrix;
-                            glLoadIdentity;
-                            drawTheHoleyBag(shape.mask.fullWindowMaskLeftEye, ds, 1);
-                            glPopMatrix;
+                            drawFullScreenMaskForTVPMCD(ds.w, shape.mask.fullWindowMaskLeftEye)
                         end
                         if renderPass == 1
-                            glPushMatrix;
-                            glLoadIdentity;
-                            drawTheHoleyBag(shape.mask.fullWindowMaskRightEye, ds, 1);
-                            glPopMatrix;
+                            drawFullScreenMaskForTVPMCD(ds.w, shape.mask.fullWindowMaskRightEye)
                         end
                         
                     end
