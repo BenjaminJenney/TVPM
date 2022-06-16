@@ -79,7 +79,7 @@ else
 end
 
 % number of trials
-pa.nTrials = 60; % Must be divisible by 6 bc there are 3 rot velocities and 6 headings. % csb june 21 2021
+pa.nTrials = 6; % Must be divisible by 6 bc there are 3 rot velocities and 6 headings. % csb june 21 2021
 
 % number of runs
 if pa.TRAINING == 1

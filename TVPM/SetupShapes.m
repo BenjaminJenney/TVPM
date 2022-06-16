@@ -148,6 +148,7 @@ af        = 2*pi*sf;
 xGrating  = (.5 + .5 * sin(af * shape.disk.texture.x - 0)); % vertically oriented grating
 yGrating  = (.5 + .5 * cos(af * shape.disk.texture.y - 0)); % horiz grating
 plaidData = 255.*((xGrating + yGrating)/2);
+
 plaidData = repmat(plaidData,[ 1 1 3 ]);
 plaidData = permute(plaidData,[ 3 2 1 ]);
 
