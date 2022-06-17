@@ -35,7 +35,7 @@ widths_m  = zeros(1, numPlanes);
 heights_m = zeros(1, numPlanes);
 
 for i = 1:numPlanes
-    widths_m(i)  = 2 * -depths_m(i) * tand((ds.hFOV_perPersonAvg/numPlanes)/2); % Visual Angle Formula
+    widths_m(i)  = 2 * -depths_m(i) * tand((ds.hFOV_perPersonAvg)/2); % Visual Angle Formula
     heights_m(i) = (2 * -depths_m(i) * tand(ds.vFOV_perPersonAvg/2)); % Visual Angle Formula
 end
 
@@ -63,14 +63,14 @@ shape.plane.textures = [nearPlaneTexture, midPlaneTexture, farPlaneTexture];
 
 % Setup vertices for the three planes
 
-depths_m  = [-.5, -1, -2]; % near, mid, far.
-numPlanes = length(depths_m);
-widths_m  = zeros(1, numPlanes);
-heights_m = zeros(1, numPlanes);
-for i = 1:numPlanes
-    widths_m(i)  = 2 * -depths_m(i) * tand((ds.hFOV_perPersonAvg/numPlanes)/2);
-    heights_m(i) = (2 * -depths_m(i) * tand(ds.vFOV_perPersonAvg/2));
-end
+% depths_m  = [-.5, -1, -2]; % near, mid, far.
+% numPlanes = length(depths_m);
+% widths_m  = zeros(1, numPlanes);
+% heights_m = zeros(1, numPlanes);
+% for i = 1:numPlanes
+%     widths_m(i)  = 2 * -depths_m(i) * tand((ds.hFOV_perPersonAvg/numPlanes)/2);
+%     heights_m(i) = (2 * -depths_m(i) * tand(ds.vFOV_perPersonAvg/2));
+% end
 %keyboard;
 numVertices = 4;
 corners = [0 0;
