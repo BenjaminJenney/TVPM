@@ -187,6 +187,7 @@ else % No hmd
     
     ds.textCoords = [ds.screenRenderWidthMonocular_px/2 ds.screenRenderHeightMonocular_px/2];
     ds.focalLength = 1.2;
+    ds.ifi = Screen('GetFlipInterval', ds.w);
 end
 
 

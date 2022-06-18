@@ -292,27 +292,38 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                     
                     
                     if ds.simulated
+                        glPushMatrix;
                         
-                        %gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,shape.plane.depths_m(2),0,1,0);
+                        gluLookAt(-xDotDisplacement,0,-zDotDisplacement,0,0,shape.plane.depths_m(2),0,1,0);
+                        
                         for i = 1:shape.plane.numPlanes
                             
-                            glPushMatrix;
-                            glTranslatef(shape.plane.offsets_m(i), 0.0, 0.0);
-                            
                             moglDrawDots3D(ds.w, [shape.disk.X_m{i} shape.disk.Y_m{i} shape.disk.Z_m{i}]', 10, [1 1 1 1], [], 2);
-                            glPopMatrix;
+                        
                         end
-                     
-                        moglDrawDots3D(ds.w, [0 0 shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
-                    elseif ds.real
-                        glPushMatrix;
-                        glTranslatef(xDotDisplacementTraining,0,zDotDisplacementTraining); % shift the dot world to its position along its trajectory for this frame
-                        moglDrawDots3D(ds.w, pa.sphere, 3, [1 1 1 1], [], 2); %drawing sphere
+                        
                         glPopMatrix;
                         
+                        moglDrawDots3D(ds.w, [0 0 shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
+                    
+                    elseif ds.real
                         glPushMatrix;
-                        glTranslatef(xDotDisplacementTraining,0,zDotDisplacementTraining);
-                        moglDrawDots3D(ds.w, [0 0 -pa.cubeWidth/4 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
+                        
+                        glTranslatef(xDotDisplacement,0,zDotDisplacement); % shift the dot world to its position along its trajectory for this frame
+                        
+                        for i = 1:shape.plane.numPlanes
+                         
+                            moglDrawDots3D(ds.w, [shape.disk.X_m{i} shape.disk.Y_m{i} shape.disk.Z_m{i}]', 10, [1 1 1 1], [], 2); %drawing sphere
+                        
+                        end
+                        
+                        glPopMatrix;
+                        %ATTN: Ask charlie about fixation dot for real eye
+                     
+                        glPushMatrix;
+                        glTranslatef(xDotDisplacement,0,zDotDisplacement); % BJ: ATTN: ASK CHARLIE ABOUT FIXATION DOT DISPLACEMENT FOR REAL EYE MOVEMENT STIMULUS
+                                                                                           %            should it be x(z)DotDisplacementTraining, or x(z)DotDisplacement? or something else? 
+                        moglDrawDots3D(ds.w, [0 0 shape.plane.depths_m(2) 1]', 3*2, pa.red, [], 2); %drawing fixation dot in environ % CSB june 21 2021 uncomment
                         glPopMatrix;
                         if mask == 1, drawTheHoleyBag(ds, 1), end % draws the ptb mask. Params: drawTheHoleyBag(window,[openglEnbled = 1]);
                     elseif ds.tvpmsd
@@ -588,7 +599,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
         % as this is done in the next iteration via glClear() call anyway:
         Screen('DrawingFinished', ds.w);
         
-        Screen('Flip', ds.w,[],[],1);
+        Screen('Flip', ds.w,ds.vbl + (1 - 0.5) * ds.ifi);
         ds.vbl = GetSecs();
         
     end

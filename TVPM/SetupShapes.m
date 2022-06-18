@@ -27,18 +27,6 @@ planeTextureHeight_px = planeHeight_deg * ds.ver_px_per_deg;
 shape.plane.TextureWidth_px = planeTextureWidth_px;
 shape.plane.TextureHeight_px  = planeTextureHeight_px;
 
-depths_m  = [-.5, -1, -2]; % near, mid, far.
-numPlanes = length(depths_m);
-
-% Convert degrees to meters(OpenGL coordinates) using visual angle formula.
-widths_m  = zeros(1, numPlanes);
-heights_m = zeros(1, numPlanes);
-
-for i = 1:numPlanes
-    widths_m(i)  = 2 * -depths_m(i) * tand((ds.hFOV_perPersonAvg)/2); % Visual Angle Formula
-    heights_m(i) = (2 * -depths_m(i) * tand(ds.vFOV_perPersonAvg/2)); % Visual Angle Formula
-end
-
 xHalfTextureSize = planeTextureWidth_px/2;
 yHalfTextureSize = floor(planeTextureHeight_px/2);
 
@@ -63,15 +51,15 @@ shape.plane.textures = [nearPlaneTexture, midPlaneTexture, farPlaneTexture];
 
 % Setup vertices for the three planes
 
-% depths_m  = [-.5, -1, -2]; % near, mid, far.
-% numPlanes = length(depths_m);
-% widths_m  = zeros(1, numPlanes);
-% heights_m = zeros(1, numPlanes);
-% for i = 1:numPlanes
-%     widths_m(i)  = 2 * -depths_m(i) * tand((ds.hFOV_perPersonAvg/numPlanes)/2);
-%     heights_m(i) = (2 * -depths_m(i) * tand(ds.vFOV_perPersonAvg/2));
-% end
-%keyboard;
+depths_m  = [-.5, -1, -2]; % near, mid, far.
+numPlanes = length(depths_m);
+widths_m  = zeros(1, numPlanes);
+heights_m = zeros(1, numPlanes);
+for i = 1:numPlanes
+    widths_m(i)  = 2 * -depths_m(i) * tand((ds.hFOV_perPersonAvg/numPlanes)/2);
+    heights_m(i) = (2 * -depths_m(i) * tand(ds.vFOV_perPersonAvg/2));
+end
+
 numVertices = 4;
 corners = [0 0;
     1 0;
@@ -117,7 +105,7 @@ shape.plane.far.depth_m   = depths_m(3);
 shape.plane.near.offset = -shape.plane.near.width_m;
 shape.plane.mid.offset  = 0;
 shape.plane.far.offset  = shape.plane.far.width_m;
-shape.plane.offsets_m   = [-shape.plane.near.width_m,0,shape.plane.far.width_m];
+shape.plane.offsets_m   = [-widths_m(1),0,widths_m(3)];
 shape.plane.offsets_deg = [-ds.hFOV_perPersonAvg/3, 0, ds.hFOV_perPersonAvg/3];
 shape.plane.numPlanes   = numPlanes;
 shape.plane.planes      = [shape.plane.near, shape.plane.mid, shape.plane.far];
