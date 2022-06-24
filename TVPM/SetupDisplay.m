@@ -69,13 +69,13 @@ else % Oculus not connected
     if ds.screenId % more than one screen connected, run fullscreen
         ds.winRect = [];
     else
-        ds.winRect = [0,0, 1792, 1080];
+        ds.winRect = [0,0, 1900, 1080];
     end
     %PsychImaging('AddTask', 'General', 'UseRetinaResolution');
     [ds.w, ds.windowRect] = PsychImaging('OpenWindow', ds.screenId, 0, ds.winRect, [], [], 4, ds.multiSample);  % CSB. split screen mode; "4" sets this
     
 end
-ds.windowRect
+
 %
 % if ~DEBUG_FLAG
 %     PsychColorCorrection('SetEncodingGamma', ds.w, 1./ds.gammaVals); % set required gamma
@@ -142,7 +142,7 @@ if ~isempty(ds.hmd) % CSB: if using hmd
         ds.screenWidthBinocular_px         = ds.screenHeightMonocular_px*2; % apparently just multiply by # of lens.
         ds.hFOV = 80; % in deg - this is what is spit back from the Oculus readings at the start - horizontal field of view
         ds.vFOV = 90;  % in deg - vertical field of view
-        ds.hFOV_perPersonAvg   = 87; % based on averages taken from https://www.infinite.cz/blog/VR-Field-of-View-measured-explained
+        ds.hFOV_perPersonAvg   = 84; % based on averages taken from https://www.infinite.cz/blog/VR-Field-of-View-measured-explained
         ds.hFOV_psych          = ds.hmdinfo.fovL(1) + ds.hmdinfo.fovL(2); % in deg - symmetric for fovL and fovR
         ds.vFOV_perPersonAvg   = 84; % based on averages taken from https://www.infinite.cz/blog/VR-Field-of-View-measured-explained
         ds.hFOV_psych          = ds.hmdinfo.fovL(3) + ds.hmdinfo.fovL(4); % in deg - vertical field of view

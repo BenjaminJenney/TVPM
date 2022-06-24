@@ -110,11 +110,11 @@ shape.plane.offsets_deg = [-ds.hFOV_perPersonAvg/3, 0, ds.hFOV_perPersonAvg/3];
 shape.plane.numPlanes   = numPlanes;
 shape.plane.planes      = [shape.plane.near, shape.plane.mid, shape.plane.far];
 shape.plane.numVertices = numVertices;
-%% Set up texture and dimensions for the Disks and apertures
+%% Set up texture and dimensions for the plaids and apertures for TVPMS
 
 diskSize_deg       = 2.5;
-diskTextureWidth   = diskSize_deg * ds.ver_px_per_deg; 
-diskTextureHeight  = diskTextureWidth;
+diskTextureWidth   = ceil(diskSize_deg * ds.hor_px_per_deg); 
+diskTextureHeight  = ceil(diskTextureWidth);
 
 halfDiskTexWidth   = diskTextureWidth/2;
 halfDiskTexHeight  = diskTextureHeight/2;
@@ -123,15 +123,15 @@ shape.disk.texture.width  = diskTextureWidth;
 shape.disk.texture.height = diskTextureHeight;
 
  
-numDisksPerPlane = 10;
+numDisksPerPlane = 4;
 shape.disk.numDisksPerPlane = numDisksPerPlane;
 shape.disk.numDisks = shape.disk.numDisksPerPlane * shape.plane.numPlanes;
 shape.disk.diskSize_deg = diskSize_deg;
 
 shape.disk = diskPos(ds, shape.disk, shape.plane);
 
-sf        = pa.sf; %.1; % cycles per deg
-sf        = (ds.deg_per_px).*sf; %1/px_per_deg %convert from deg to
+sf        = pa.sf; % cycles per deg
+sf        = (ds.deg_per_px).*sf; %cyc/deg * deg/px = cyc/px
 af        = 2*pi*sf;
 xGrating  = (.5 + .5 * sin(af * shape.disk.texture.x - 0)); % vertically oriented grating
 yGrating  = (.5 + .5 * cos(af * shape.disk.texture.y - 0)); % horiz grating
@@ -147,7 +147,7 @@ glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
 glTexParameterfv(type, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
 glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR);
 glTexImage2D(type, 0, GL.RGB, shape.disk.texture.width, shape.disk.texture.width, 0, GL.RGB, GL.UNSIGNED_BYTE, uint8(plaidData));
-glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
+glTexEnvfv(GL.TEXTURE_ENV, GL.TEXTURE_ENV_MODE, GL.MODULATE);
 glBindTexture(type,0);
 
 shape.disk.texture.id = textureid(1);
@@ -186,11 +186,11 @@ end
 
 Screen('EndOpenGL', ds.w);
 
-%% Full Window Mask
+%% Full Window Mask for TVPMCD
 % Unlike the other shapes the Full Window Mask is drawn with high level
 % PsychToolBox functions since the Full Window Mask essentially has no
 % depth and can be expressed with only 2 dimensions.
-apertureDia_deg = diskSize_deg/1.5;
+apertureDia_deg = 1;
 apertureRadius_px  = (apertureDia_deg/2)*ds.hor_px_per_deg;%sqrt((apertureDia_deg^2 + apertureDia_deg^2)*ds.hor_px_per_deg);
 
 %{ Force disparity of the Full Window Mask to match the disparity of the middle plane %}
@@ -256,11 +256,11 @@ alphaMask(round(abs(d_px)/2):end,:,1) = frontCols; % paste to the end of the Alp
 bag(:,:,4) = fliplr(alphaMask(:,:,1)');% circshift(mask(:,:,2)', 50,2);
 shape.mask.fullWindowMaskRightEye = Screen('MakeTexture', ds.w, bag);
 
-%% Masks for TVPM Full
+%% Masks for TVPMSD
 Screen('BeginOpenGL', ds.w);
-maskOpacity = 255; % for debugging purposes, opacity range = [0,255], where 255 is full opacity, 0 is completely translucent.
+maskOpacity = 175; % for debugging purposes, opacity range = [0,255], where 255 is full opacity, 0 is completely translucent.
 
-% Get plaid positions for TVPM-Full, bounded by shape.plane
+% Get plaid positions for TVPMSD, bounded by shape.plane
 
 corners = [0 0;
     1 0;
@@ -276,7 +276,7 @@ opaque = ones(size(x));
 maskWidths_m  = zeros(1, shape.plane.numPlanes);
 maskHeights_m = zeros(1, shape.plane.numPlanes);
 maskDepths_m  = shape.plane.depths_m + .001;
-for i = 1:shape.plane.numPlanes
+for i = 1:shape.plane.numPlanes % Use visual angle formula to convert from degrees to meters.
     maskWidths_m(i)  = 2 * -maskDepths_m(i) * tand((ds.hFOV_perPersonAvg/shape.plane.numPlanes)/2);
     maskHeights_m(i) = 2 * -maskDepths_m(i) * tand(ds.vFOV_perPersonAvg/2);
 end
@@ -285,7 +285,11 @@ shape.mask.widths_m = maskWidths_m;
 shape.mask.heights_m = maskHeights_m;
 
 for i = 1:shape.plane.numPlanes
-    
+    % blackTexData is the image of the mask and initially has 3 RGB channels set to black
+    % we then add an alpha channel opaque to blackTexData, opaque is alpha
+    % values that are either 0 opacity (the holes) and 255 full opacity.
+    % use imagesc(opaque) to see the where the 'holes' appear in the alpha
+    % channel
     blackTexData = zeros(maskTexHalfWidth*2, maskTexHalfHeight*2);
     blackTexData = repmat(blackTexData',[ 1 1 3 ]);
     blackTexData = permute(uint8(blackTexData),[ 3 2 1 ]);
@@ -297,7 +301,7 @@ for i = 1:shape.plane.numPlanes
     end
     
     if i == 2
-        opaque = min(opaque, sqrt(x.^2 + y.^2) > fixationDotSize_px) ; % cut out hole in middle mask for fixation dot
+        opaque = min(opaque, sqrt(x.^2 + y.^2) > apertureRadius_px) ; % cut out hole in middle mask for fixation dot
     end
     
     ithMaskVertices = [-maskWidths_m(i)/2 -maskHeights_m(i)/2 maskDepths_m(i);...
@@ -322,63 +326,6 @@ for i = 1:shape.plane.numPlanes
     opaque = ones(size(x));
 end
 Screen('EndOpenGL', ds.w);
-
-%ds.masktex = Screen('MakeTexture', ds.w, mask);
-
-%black = ones(screenYpixels, screenXpixels) .* black;
-%black(:, : 4) = mask;
-
-%bag = permute(bag,[ 3 2 1 ]);
-
-%bag(628:668,:,4) = -1;
-% Make a grey texture to cover the full window
-%shape.mask.fullWindowMask = Screen('MakeTexture', ds.w, bag);
-
-%     % Make coordinates in which to draw the apertures into our full screen mask
-%     [xg, yg] = meshgrid(-gaussDim:gaussDim, -gaussDim:gaussDim); % csb: and this controls how many apertures there are
-%     spacing = gaussDim * 2; % csb: i think this controls how far apart the apertures ares
-%     xg = xg .* spacing + screenXpixels / 2;
-%     yg = yg .* spacing + screenYpixels / 2; % hole y position%
-%     xg = reshape(xg, 1, numel(xg));
-%     yg = reshape(yg, 1, numel(yg));
-%
-%     shape.mask.gauss = gauss;
-%
-%     % Make the destination rectangles for the gaussian apertures
-%     shape.dstRects = nan(4, numel(xg));
-%     for i = 1:numel(xg)
-%     shape.dstRects(:, i) = CenterRectOnPointd([0 0 s1, s2], xg(i), yg(i));
-%     end
-
-% APERTURES:
-%{
-    [x,y]         = meshgrid(-1*(apertPlaneSize_px/2):(apertPlaneSize_px/2)-1, -1*(apertPlaneSize_px/2): (apertPlaneSize_px/2)-1);
-    %rmin_bg    = 45.6874;% pixels
-    apertureSize_px = 20; %137.7631;% pixels  Not sure what dimension
-    %pa.rstrip     = 11.6268;% this cuts a strip into the fixation disk that has a height the size of the paddle height
-    aperturePlane = zeros(apertPlaneSize_px,apertPlaneSize_px).*255;
-    aperture      = ones(size(x'));
-    aperture      = min(aperture, ((sqrt((x').^2+(y').^2) > apertureSize_px))); % | ((abs(y') > pa.rstrip) & sqrt((x').^2+(y').^2) < pa.rmin_bg)));
-    aperturePlane = repmat(aperturePlane,[ 1 1 4 ]);
-    aperturePlane = permute(aperturePlane,[ 3 2 1 ]);
-    aperturePlane(4,:,:) = shiftdim(255 .* aperture, -1);
-    
-    glBindTexture(type, textureid(2));
-        glTexParameterfv(type, GL.TEXTURE_WRAP_S, GL.REPEAT);
-        glTexParameterfv(type, GL.TEXTURE_WRAP_T, GL.REPEAT);
-        glTexParameterfv(type, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
-        glTexParameterfv(type, GL.TEXTURE_MIN_FILTER, GL.LINEAR);
-        glTex Image2D(type, 0, GL.RGBA, diskTextureWidth*2, diskTextureHeight*2, 0, GL.RGBA, GL.UNSIGNED_BYTE, uint8(aperturePlane));
-        glTexEnvi(GL.POINT_SPRITE, GL.COORD_REPLACE, GL.TRUE);
-    glBindTexture(type,0)
-    
-%}
-%shape.disk.texture.id     = textureid;
-%shape.disk.texture.aptrId = textureid(2);
-
-%     figure; imagesc(bagBeforeDisparity(:,:,4)); axis equal;
-%      planeAlpha = [planeAlphas{1} planeAlphas{2} planeAlphas{3}]';
-%      figure; imagesc(planeAlpha); axis equal;
 
 
 % make phase modulation limits in m for each plane

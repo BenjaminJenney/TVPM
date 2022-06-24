@@ -58,7 +58,7 @@ pa.fixationDiameter = 20;
 pa.fixationDist = -pa.cubeWidth/4 +.5; % depth of fixation dot in m
 pa.fixationVertexPos = [0 0 pa.fixationDist];
 
-pa.stimulusDuration_sec = 2; % seconds
+pa.stimulusDuration_sec = 4; % seconds
 pa.nFrames = 90 * pa.stimulusDuration_sec; % NEED TO FIX: 80 fps is by no means exact.
 pa.viewingDistance_m = 0; % CHECK WITH DAVID: this is almost certainly incorrect. Is traditional viewing distance meaningful in vr? If so are we interested in distance to OLED's or lens'?
 pa.dty = 0; % dtx and dty are accumulators inside the render loop for the phase change of the animated plaids.
@@ -79,7 +79,7 @@ else
 end
 
 % number of trials
-pa.nTrials = 6; % Must be divisible by 6 bc there are 3 rot velocities and 6 headings. % csb june 21 2021
+pa.nTrials = 12; % Must be divisible by 6 bc there are 3 rot velocities and 6 headings. % csb june 21 2021
 
 % number of runs
 if pa.TRAINING == 1
@@ -161,4 +161,4 @@ pa.quitFlag = 0; % don't give up
 pa.sf = 1.5;
 pa.apertureDia_px = floor(1 * ds.hor_px_per_deg); % Size of the holes for both TVPMSD and TVPMCD.
 
-        end
+end
