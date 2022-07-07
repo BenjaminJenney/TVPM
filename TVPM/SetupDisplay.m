@@ -49,15 +49,15 @@ else % oculus not connected
     load('DefaultHMDParameters.mat');
     oc.defaultState = defaultState;
     
-    ds.defaultIPD = 0;%0.064; % in m
-    ds.viewingDistance = 0;%0.45;
-    defaultState.modelViewDataLeft = [1 0 0 -ds.defaultIPD/2; 0 1 0 0; 0 0 1 -ds.viewingDistance; 0 0 0 1]; %+/- IPD/2
-    defaultState.modelViewDataRight = [1 0 0 ds.defaultIPD/2; 0 1 0 0; 0 0 1 -ds.viewingDistance; 0 0 0 1];
-    oc.defaultState.modelView = {defaultState.modelViewDataLeft, defaultState.modelViewDataRight};
-    oc.defaultState.modelView{1}(13) = ds.defaultIPD/2;
-    oc.defaultState.modelView{1}(15) = -ds.viewingDistance;
-    oc.defaultState.modelView{2}(13) = -ds.defaultIPD/2;
-    oc.defaultState.modelView{2}(15) = -ds.viewingDistance;
+%     ds.defaultIPD = 0;%0.064; % in m
+%     ds.viewingDistance = 0;%0.45;
+%     defaultState.modelViewDataLeft = [1 0 0 -ds.defaultIPD/2; 0 1 0 0; 0 0 1 -ds.viewingDistance; 0 0 0 1]; %+/- IPD/2
+%     defaultState.modelViewDataRight = [1 0 0 ds.defaultIPD/2; 0 1 0 0; 0 0 1 -ds.viewingDistance; 0 0 0 1];
+%     oc.defaultState.modelView = {defaultState.modelViewDataLeft, defaultState.modelViewDataRight};
+%     oc.defaultState.modelView{1}(13) = ds.defaultIPD/2;
+%     oc.defaultState.modelView{1}(15) = -ds.viewingDistance;
+%     oc.defaultState.modelView{2}(13) = -ds.defaultIPD/2;
+%     oc.defaultState.modelView{2}(15) = -ds.viewingDistance;
     
     %PsychImaging('AddTask', 'General', 'SideBySideCompressedStereo'); % CSB: for specifying which eye channel we're displaying to. This isn't working with Screen('SelectStereoDrawBuffer')...
 end
@@ -69,7 +69,7 @@ else % Oculus not connected
     if ds.screenId % more than one screen connected, run fullscreen
         ds.winRect = [];
     else
-        ds.winRect = [0,0, 1900, 1080];
+        ds.winRect = [0,0, 1920, 1080];
     end
     %PsychImaging('AddTask', 'General', 'UseRetinaResolution');
     [ds.w, ds.windowRect] = PsychImaging('OpenWindow', ds.screenId, 0, ds.winRect, [], [], 4, ds.multiSample);  % CSB. split screen mode; "4" sets this

@@ -97,7 +97,7 @@ while ~readyToBegin % confirm everything's ready to go
             glMatrixMode(GL.PROJECTION)
             glLoadMatrixd(ds.projMatrix{renderPass + 1});
             
-            modelView = oc.defaultState.modelView{ds.renderPass + 1}; % SET BACK to initialState.modelView for normal camera Use per-eye modelView matrices
+            modelView = oc.initialState.modelView{renderPass+1}; % SET BACK to initialState.modelView for normal camera Use per-eye modelView matrices
             
             % N/A, redundant compared to modelView above. pa.modelViewSaveOutForFixed{ds.renderPass + 1} =  oc.initialState.modelView{ds.renderPass + 1};
             glMatrixMode(GL.MODELVIEW)
@@ -227,7 +227,7 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 
                 Screen('SelectStereoDrawbuffer', ds.w, eye.eyeIndex); % Select 'eyeIndex' to render (left- or right-eye):
                 
-                modelView = oc.defaultState.modelView{renderPass+1};%eye.modelView;
+                %modelView = oc.defaultState.modelView{renderPass+1};%eye.modelView;
                 
                 Screen('BeginOpenGL', ds.w); % Manually reenable 3D mode in preparation of eye draw cycle
                 
@@ -236,8 +236,8 @@ while (pa.runNumber <= pa.numRuns) && ~kb.keyCode(kb.escapeKey)
                 glLoadMatrixd(ds.projMatrix{renderPass + 1});
                 
                 glMatrixMode(GL.MODELVIEW);
-                
-                glLoadMatrixd(modelView); % updates openGL camera
+                glLoadIdentity;
+                %glLoadMatrixd(eye.modelView); % updates openGL camera
                 
                 glClearColor(0.5, 0.5, 0.5, 0.5); % white background
                 glClear(); % clear the buffers - must be done for every frame
