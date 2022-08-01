@@ -2,7 +2,7 @@ function [ds,oc] = SetupDisplay(ds)
 
 % Setup Psychtoolbox for OpenGL 3D rendering support and initialize the
 % mogl OpenGL for Matlab/Octave wrapper:
-InitializeMatlabOpenGL(1);
+InitializeMatlabOpenGL(0);
 PsychDefaultSetup(2); % the input of 2 means: execute the AssertOpenGL command, execute KbName('UnifyKeyNames') routine, AND unifies the color mode and switches from 0-255 to 0.0-1.0 - color part only impacts the current function or script, not ones that are called
 % CSB: 08/1/2019, didn't we already do this in runExperiment.m??
 
@@ -126,8 +126,8 @@ if ~isempty(ds.hmd) % CSB: if using hmd
     ds.halfHeight = ds.Height/2;
     ds.Width = 1.7614; % virtual width of the surround texture in meters, based on viewing distance - we want this to relate to the longer dimension of the display
     ds.halfWidth = ds.Width/2;
-    ds.yc = RectHeight(ds.windowRect)/2; % the horizontal center of the display in pixels
-    ds.xc = RectWidth(ds.windowRect)/2; % the vertical center of the display in pixels
+    ds.yc = (RectHeight(ds.windowRect)/2); % the vertical center of the display in pixels
+    ds.xc = RectWidth(ds.windowRect)/2; % the horizontal center of the display in pixels
     ds.textCoords = [ds.yc ds.xc];
     
     if strcmp(ds.hmdinfo.modelName, 'Oculus Rift CV1')
@@ -218,7 +218,12 @@ glHint(GL.POLYGON_SMOOTH_HINT, GL.NICEST);
 glEnable(GL.FRAMEBUFFER_SRGB);
 
 % Set viewport properly:
-glViewport(0, 0, RectWidth(ds.windowRect), RectHeight(ds.windowRect));  % this is how the viewport is specified in all of the demos, but what it does it makes the horizontal dimension the shorter one and the vertical dimension the longer one
+%glViewport(0, 0, RectWidth(ds.windowRect), RectHeight(ds.windowRect)-(((63.651332-50.964488)*ds.ver_px_per_deg)/2)); %-RectHeight(ds.windowRect)*.08);  % this is how the viewport is specified in all of the demos, but what it does it makes the horizontal dimension the shorter one and the vertical dimension the longer one
+reported_UFOV = 50.964488; reported_LFOV = 63.651332; reported_TFOV = reported_UFOV+reported_LFOV;
+vertical_shift = abs((reported_TFOV/2)-(reported_UFOV))*ds.ver_px_per_deg;
+glViewport(0, 0, RectWidth(ds.windowRect), RectHeight(ds.windowRect)-vertical_shift);
+disp(vertical_shift)
+% ~241.6542
 
 % Enable alpha-blending for smooth dot drawing:
 glEnable(GL.BLEND);
@@ -259,7 +264,7 @@ glLoadIdentity;
 
 % Set background clear color
 glClearColor(0.5,0.5,0.5,1); % mid-gray
-% glClearColor(0,0,0,1); % black
+%glClearColor(0,0,0,1); % black
 
 % Clear out the backbuffer: This also cleans the depth-buffer for
 % proper occlusion handling: You need to glClear the depth buffer whenever
@@ -267,7 +272,7 @@ glClearColor(0.5,0.5,0.5,1); % mid-gray
 % handling will screw up in funny ways...
 glClear;
 
-glEnable(GL_TEXTURE_2D); % Prepare environment for low level OpenGL Texture Rendering
+glEnable(GL.TEXTURE_2D); % Prepare environment for low level OpenGL Texture Rendering
 % If geometry is not textured, it's likely because
 % GL_TEXTURE_2D is not enabled
 

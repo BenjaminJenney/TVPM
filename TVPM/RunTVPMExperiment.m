@@ -52,7 +52,7 @@ end
 % and initialize the mogl OpenGL for Matlab/Octave wrapper:
 global GL; % GL data structure needed for all OpenGL programs
 
-InitializeMatlabOpenGL(1);
+InitializeMatlabOpenGL(0);
 PsychDefaultSetup(2); % the input of 2 means: execute the AssertOpenGL command, execute KbName('UnifyKeyNames') routine, AND unifies the color mode and switches from 0-255 to 0.0-1.0 - color part only impacts the current function or script, not ones that are called
 
 %% Initialize screen, experimental parameters, and keyboard
@@ -84,8 +84,8 @@ while ~readyToBegin % confirm everything's ready to go
         oc.initialState = PsychVRHMD('PrepareRender', ds.hmd, ds.globalHeadPose);  % get the state of the hmd now
     end
     
-    instructionsCenterxL = ds.textCoords(2)-200+(pa.instructionDisparity/2);
-    instructionsCenterxR = ds.textCoords(2)-200-(pa.instructionDisparity/2);
+    instructionsCenterxL = ds.textCoords(2)+(pa.instructionDisparity/2);
+    instructionsCenterxR = ds.textCoords(2)-(pa.instructionDisparity/2);
     
     for renderPass = 0:1 % loop over eyes
         if MONOCULAR && renderPass == 0 || ~MONOCULAR
@@ -105,11 +105,13 @@ while ~readyToBegin % confirm everything's ready to go
             
             Screen('EndOpenGL', ds.w);
             if renderPass == 0
-                Screen('DrawText',ds.w,'Ready to start the experiment?',instructionsCenterxL,ds.textCoords(1)-200,[1 1 1]);
-                Screen('DrawText',ds.w,'Press SPACE to confirm.',instructionsCenterxL,ds.textCoords(1)+50-200,[1 1 1]);
+                Screen('DrawText',ds.w,'?',instructionsCenterxL,ds.textCoords(1),[1 1 1]);
+                %Screen('DrawText',ds.w,'Ready to start the experiment?',instructionsCenterxL,ds.textCoords(1)-200,[1 1 1]);
+                %Screen('DrawText',ds.w,'Press SPACE to confirm.',instructionsCenterxL,ds.textCoords(1)+50-200,[1 1 1]);
             elseif renderPass == 1
-                Screen('DrawText',ds.w,'Ready to start the experiment?',instructionsCenterxR,ds.textCoords(1)-200,[1 1 1]);
-                Screen('DrawText',ds.w,'Press SPACE to confirm.',instructionsCenterxR,ds.textCoords(1)+50-200,[1 1 1]);
+                Screen('DrawText',ds.w,'?',instructionsCenterxR,ds.textCoords(1),[1 1 1]);
+                %Screen('DrawText',ds.w,'Ready to start the experiment?',instructionsCenterxR,ds.textCoords(1)-200,[1 1 1]);
+                %Screen('DrawText',ds.w,'Press SPACE to confirm.',instructionsCenterxR,ds.textCoords(1)+50-200,[1 1 1]);
             end
         end
     end
